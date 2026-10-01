@@ -1,0 +1,38 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: orderhub
+
+  datasource:
+    url: jdbc:postgresql://localhost:5434/orderhub_db
+    username: postgres
+    password: password123
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update # Ở môi trường dev, tự động map entity thành bảng
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+# Cấu hình JWT cho dự án
+application:
+  security:
+    jwt:
+      # Chuỗi secret key độ dài tối thiểu 256-bit (32 ký tự trở lên)
+      secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      expiration: 86400000 # 1 ngày (tính theo ms)
+
+# Swagger UI path
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
