@@ -3,9 +3,11 @@ package com.orderhub.service.impl;
 import com.orderhub.dto.request.CreateProductRequest;
 import com.orderhub.dto.request.UpdateStockRequest;
 import com.orderhub.dto.response.ProductResponse;
+import com.orderhub.entity.Inventory;
 import com.orderhub.entity.Product;
 import com.orderhub.exception.AppException;
 import com.orderhub.exception.ErrorCode;
+import com.orderhub.repository.InventoryRepository;
 import com.orderhub.repository.ProductRepository;
 import com.orderhub.service.ProductService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ import java.util.List;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
+    private final InventoryRepository inventoryRepository;
 
     @Override
     @Transactional
@@ -31,8 +34,15 @@ public class ProductServiceImpl implements ProductService {
                 .sku(request.getSku())
                 .name(request.getName())
                 .price(request.getPrice())
-                .stockQuantity(request.getStockQuantity())
                 .build();
+
+        Inventory inventory = Inventory.builder()
+                .product(product)
+                .totalQuantity(request.getStockQuantity())
+                .reservedQuantity(0)
+                .build();
+
+        product.setInventory(inventory);
 
         return mapToResponse(productRepository.save(product));
     }
@@ -57,11 +67,13 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public ProductResponse updateStock(Long id, UpdateStockRequest request) {
-        Product product = productRepository.findById(id)
+        Inventory inventory = inventoryRepository.findByProductId(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        product.setStockQuantity(request.getQuantity());
-        return mapToResponse(productRepository.save(product));
+        inventory.setTotalQuantity(request.getQuantity());
+        inventoryRepository.save(inventory);
+
+        return mapToResponse(inventory.getProduct());
     }
 
     private ProductResponse mapToResponse(Product product) {

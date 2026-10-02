@@ -29,9 +29,11 @@ public class Product extends BaseEntity {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal price;
 
-    @Column(name = "stock_quantity", nullable = false)
-    private Integer stockQuantity;
+    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Inventory inventory;
 
-    @Version
-    private Long version;
+    // Helper method tiện ích để không phá vỡ logic lấy tồn kho
+    public Integer getStockQuantity() {
+        return inventory != null ? inventory.getAvailableQuantity() : 0;
+    }
 }

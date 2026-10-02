@@ -11,6 +11,7 @@ import com.orderhub.entity.User;
 import com.orderhub.entity.enums.OrderStatus;
 import com.orderhub.exception.AppException;
 import com.orderhub.exception.ErrorCode;
+import com.orderhub.repository.InventoryRepository;
 import com.orderhub.repository.OrderRepository;
 import com.orderhub.repository.ProductRepository;
 import com.orderhub.repository.UserRepository;
@@ -31,6 +32,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final InventoryRepository inventoryRepository;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -56,19 +58,16 @@ public class OrderServiceImpl implements OrderService {
             Product product = productRepository.findById(itemRequest.getProductId())
                     .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
 
-            // Trừ kho nguyên tử (Atomic Update) - Chống overselling/race condition
-            int updatedRows = productRepository.decreaseStock(product.getId(), itemRequest.getQuantity());
+            // Trừ kho an toàn qua InventoryRepository (Tăng reservedQuantity)
+            int updatedRows = inventoryRepository.reserveStock(product.getId(), itemRequest.getQuantity());
             if (updatedRows == 0) {
-                // Không đủ hàng tồn kho -> Ném lỗi kích hoạt Rollback toàn bộ transaction
                 throw new AppException(ErrorCode.OUT_OF_STOCK);
             }
 
-            // Tính tiền theo giá niêm yết tại thời điểm mua (priceAtPurchase)
             BigDecimal itemPrice = product.getPrice();
             BigDecimal subtotal = itemPrice.multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
             totalAmount = totalAmount.add(subtotal);
 
-            // Tạo chi tiết OrderItem và gán vào Order
             OrderItem orderItem = OrderItem.builder()
                     .product(product)
                     .quantity(itemRequest.getQuantity())

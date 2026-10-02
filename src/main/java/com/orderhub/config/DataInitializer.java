@@ -1,5 +1,6 @@
 package com.orderhub.config;
 
+import com.orderhub.entity.Inventory;
 import com.orderhub.entity.Product;
 import com.orderhub.entity.User;
 import com.orderhub.entity.enums.Role;
@@ -44,15 +45,15 @@ public class DataInitializer implements CommandLineRunner {
                     .sku("SKU-IPHONE15")
                     .name("iPhone 15 Pro Max 256GB")
                     .price(new BigDecimal("29990000"))
-                    .stockQuantity(10)
                     .build();
+            p1.setInventory(Inventory.builder().product(p1).totalQuantity(10).reservedQuantity(0).build());
 
             Product p2 = Product.builder()
                     .sku("SKU-MACBOOK-M3")
                     .name("MacBook Pro M3 14 inch")
                     .price(new BigDecimal("39990000"))
-                    .stockQuantity(5)
                     .build();
+            p2.setInventory(Inventory.builder().product(p2).totalQuantity(5).reservedQuantity(0).build());
 
             productRepository.saveAll(List.of(p1, p2));
         }
