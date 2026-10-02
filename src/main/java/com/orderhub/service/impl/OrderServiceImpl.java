@@ -2,6 +2,7 @@ package com.orderhub.service.impl;
 
 import com.orderhub.dto.request.CreateOrderRequest;
 import com.orderhub.dto.request.OrderItemRequest;
+import com.orderhub.dto.request.UpdateOrderStatusRequest;
 import com.orderhub.dto.response.OrderItemResponse;
 import com.orderhub.dto.response.OrderResponse;
 import com.orderhub.entity.Order;
@@ -104,6 +105,48 @@ public class OrderServiceImpl implements OrderService {
                 .filter(order -> order.getUser().getId().equals(userId))
                 .map(this::mapToOrderResponse)
                 .toList();
+    }
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public OrderResponse updateOrderStatus(String orderCode, UpdateOrderStatusRequest request) {
+        Order order = orderRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        OrderStatus currentStatus = order.getStatus();
+        OrderStatus targetStatus = request.getStatus();
+
+        // 1. Kiểm tra tính hợp lệ của việc chuyển trạng thái
+        if (!currentStatus.canTransitionTo(targetStatus)) {
+            throw new AppException(ErrorCode.INVALID_STATE_TRANSITION);
+        }
+
+        // 2. Kích hoạt nghiệp vụ kho tương ứng
+        if (targetStatus == OrderStatus.CANCELLED) {
+            // Hoàn lại lượng reservedQuantity về cho kho
+            for (OrderItem item : order.getItems()) {
+                inventoryRepository.releaseStock(item.getProduct().getId(), item.getQuantity());
+            }
+        } else if (targetStatus == OrderStatus.SHIPPED) {
+            // Hàng xuất đi: trừ đứt cả totalQuantity lẫn reservedQuantity
+            for (OrderItem item : order.getItems()) {
+                inventoryRepository.deductStockOnShipment(item.getProduct().getId(), item.getQuantity());
+            }
+        }
+
+        // 3. Cập nhật trạng thái mới cho đơn hàng
+        order.setStatus(targetStatus);
+        Order updatedOrder = orderRepository.save(order);
+
+        return mapToOrderResponse(updatedOrder);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public OrderResponse cancelOrder(String orderCode) {
+        // Hủy đơn hàng là trường hợp đặc biệt chuyển sang CANCELLED
+        return updateOrderStatus(orderCode, UpdateOrderStatusRequest.builder()
+                .status(OrderStatus.CANCELLED)
+                .build());
     }
 
     private OrderResponse mapToOrderResponse(Order order) {
