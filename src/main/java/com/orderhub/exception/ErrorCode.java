@@ -12,6 +12,7 @@ public enum ErrorCode {
     INVALID_STATUS_TRANSITION(1005, "Không thể chuyển sang trạng thái đơn hàng này", HttpStatus.BAD_REQUEST),
     UNAUTHORIZED(1006, "Yêu cầu đăng nhập hoặc token không hợp lệ", HttpStatus.UNAUTHORIZED),
     INVALID_INPUT(9998, "Dữ liệu đầu vào không hợp lệ", HttpStatus.BAD_REQUEST),
+    INVALID_STATE_TRANSITION(1004, "Chuyển đổi trạng thái đơn hàng không hợp lệ", org.springframework.http.HttpStatus.BAD_REQUEST),
     UNCATEGORIZED_EXCEPTION(9999, "Lỗi hệ thống không xác định", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final int code;

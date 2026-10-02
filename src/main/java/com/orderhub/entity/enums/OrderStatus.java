@@ -26,5 +26,11 @@ public enum OrderStatus {
         }
     };
 
-    public abstract boolean canTransitionTo(OrderStatus next);
+    public boolean canTransitionTo(OrderStatus nextStatus) {
+        return switch (this) {
+            case PENDING -> nextStatus == CONFIRMED || nextStatus == CANCELLED;
+            case CONFIRMED -> nextStatus == SHIPPED || nextStatus == CANCELLED;
+            case SHIPPED, CANCELLED -> false; // Trạng thái kết thúc, không thể đổi
+        };
+    }
 }
