@@ -1,6 +1,7 @@
 package com.orderhub.controller;
 
 import com.orderhub.dto.request.CreateOrderRequest;
+import com.orderhub.dto.request.UpdateOrderStatusRequest;
 import com.orderhub.dto.response.ApiResponse;
 import com.orderhub.dto.response.OrderResponse;
 import com.orderhub.service.OrderService;
@@ -51,6 +52,29 @@ public class OrderController {
         return ResponseEntity.ok(
                 ApiResponse.<List<OrderResponse>>builder()
                         .data(orderService.getOrdersByUserId(userId))
+                        .build()
+        );
+    }
+    @PatchMapping("/{orderCode}/status")
+    @Operation(summary = "Cập nhật trạng thái đơn hàng (Duyệt CONFIRMED / Xuất kho SHIPPED)")
+    public ResponseEntity<ApiResponse<OrderResponse>> updateOrderStatus(
+            @PathVariable String orderCode,
+            @Valid @RequestBody UpdateOrderStatusRequest request) {
+        return ResponseEntity.ok(
+                ApiResponse.<OrderResponse>builder()
+                        .message("Cập nhật trạng thái đơn hàng thành công")
+                        .data(orderService.updateOrderStatus(orderCode, request))
+                        .build()
+        );
+    }
+
+    @PatchMapping("/{orderCode}/cancel")
+    @Operation(summary = "Hủy đơn hàng (Tự động hoàn lại số lượng tồn kho)")
+    public ResponseEntity<ApiResponse<OrderResponse>> cancelOrder(@PathVariable String orderCode) {
+        return ResponseEntity.ok(
+                ApiResponse.<OrderResponse>builder()
+                        .message("Hủy đơn hàng thành công")
+                        .data(orderService.cancelOrder(orderCode))
                         .build()
         );
     }
