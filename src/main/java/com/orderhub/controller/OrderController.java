@@ -1,0 +1,57 @@
+package com.orderhub.controller;
+
+import com.orderhub.dto.request.CreateOrderRequest;
+import com.orderhub.dto.response.ApiResponse;
+import com.orderhub.dto.response.OrderResponse;
+import com.orderhub.service.OrderService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/orders")
+@RequiredArgsConstructor
+@Tag(name = "Order Controller", description = "Quản lý luồng đặt hàng và tra cứu đơn")
+public class OrderController {
+
+    private final OrderService orderService;
+
+    @PostMapping
+    @Operation(summary = "Tạo đơn hàng mới (Tự động trừ kho an toàn)")
+    public ResponseEntity<ApiResponse<OrderResponse>> createOrder(@Valid @RequestBody CreateOrderRequest request) {
+        OrderResponse response = orderService.createOrder(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                ApiResponse.<OrderResponse>builder()
+                        .code(HttpStatus.CREATED.value())
+                        .message("Tạo đơn hàng thành công")
+                        .data(response)
+                        .build()
+        );
+    }
+
+    @GetMapping("/{orderCode}")
+    @Operation(summary = "Tra cứu đơn hàng qua mã Code (Ví dụ: ORD-A1B2C3D4)")
+    public ResponseEntity<ApiResponse<OrderResponse>> getOrderByCode(@PathVariable String orderCode) {
+        return ResponseEntity.ok(
+                ApiResponse.<OrderResponse>builder()
+                        .data(orderService.getOrderByCode(orderCode))
+                        .build()
+        );
+    }
+
+    @GetMapping("/user/{userId}")
+    @Operation(summary = "Lấy danh sách đơn hàng theo User ID")
+    public ResponseEntity<ApiResponse<List<OrderResponse>>> getOrdersByUserId(@PathVariable Long userId) {
+        return ResponseEntity.ok(
+                ApiResponse.<List<OrderResponse>>builder()
+                        .data(orderService.getOrdersByUserId(userId))
+                        .build()
+        );
+    }
+}
