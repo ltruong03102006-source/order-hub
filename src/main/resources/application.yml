@@ -36,3 +36,9 @@ springdoc:
     operations-sorter: alpha
   api-docs:
     path: /v3/api-docs
+
+order:
+  # Số phút đơn hàng tồn tại trước khi bị hủy (để test nhanh, ta có thể đặt là 1 hoặc 2 phút)
+  expiration-minutes: 1
+  # Chu kỳ quét của cron/fixedDelay (30 giây quét một lần)
+  scheduler-interval-ms: 30000
