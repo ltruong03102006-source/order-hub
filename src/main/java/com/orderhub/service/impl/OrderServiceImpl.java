@@ -10,6 +10,7 @@ import com.orderhub.entity.OrderItem;
 import com.orderhub.entity.Product;
 import com.orderhub.entity.User;
 import com.orderhub.entity.enums.OrderStatus;
+import com.orderhub.event.OrderCreatedEvent;
 import com.orderhub.exception.AppException;
 import com.orderhub.exception.ErrorCode;
 import com.orderhub.repository.InventoryRepository;
@@ -18,6 +19,7 @@ import com.orderhub.repository.ProductRepository;
 import com.orderhub.repository.UserRepository;
 import com.orderhub.service.OrderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +36,7 @@ public class OrderServiceImpl implements OrderService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final InventoryRepository inventoryRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -82,6 +85,15 @@ public class OrderServiceImpl implements OrderService {
 
         // 4. Lưu đơn hàng (CascadeType.ALL tự động lưu kèm danh sách order_items)
         Order savedOrder = orderRepository.save(order);
+
+        // Bắn sự kiện OrderCreatedEvent
+        eventPublisher.publishEvent(new OrderCreatedEvent(
+                savedOrder.getId(),
+                savedOrder.getOrderCode(),
+                savedOrder.getUser().getId(),
+                savedOrder.getTotalAmount(),
+                savedOrder.getCreatedAt()
+        ));
 
         return mapToOrderResponse(savedOrder);
     }
