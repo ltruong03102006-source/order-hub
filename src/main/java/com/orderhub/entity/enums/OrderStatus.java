@@ -1,36 +1,23 @@
 package com.orderhub.entity.enums;
 
-public enum OrderStatus {
-    PENDING {
-        @Override
-        public boolean canTransitionTo(OrderStatus next) {
-            return next == CONFIRMED || next == CANCELLED;
-        }
-    },
-    CONFIRMED {
-        @Override
-        public boolean canTransitionTo(OrderStatus next) {
-            return next == SHIPPED || next == CANCELLED;
-        }
-    },
-    SHIPPED {
-        @Override
-        public boolean canTransitionTo(OrderStatus next) {
-            return false; // Đã giao hàng thì không đổi được nữa
-        }
-    },
-    CANCELLED {
-        @Override
-        public boolean canTransitionTo(OrderStatus next) {
-            return false; // Đã hủy thì kết thúc luồng
-        }
-    };
+import java.util.List;
 
-    public boolean canTransitionTo(OrderStatus nextStatus) {
+public enum OrderStatus {
+    PENDING,
+    CONFIRMED,
+    SHIPPED,
+    DELIVERED,
+    RETURNED,
+    CANCELLED;
+
+    public boolean canTransitionTo(OrderStatus target) {
+        if (target == null) return false;
+
         return switch (this) {
-            case PENDING -> nextStatus == CONFIRMED || nextStatus == CANCELLED;
-            case CONFIRMED -> nextStatus == SHIPPED || nextStatus == CANCELLED;
-            case SHIPPED, CANCELLED -> false; // Trạng thái kết thúc, không thể đổi
+            case PENDING -> target == CONFIRMED || target == CANCELLED;
+            case CONFIRMED -> target == SHIPPED || target == CANCELLED;
+            case SHIPPED -> target == DELIVERED || target == RETURNED; // Đích đến từ SHIPPED
+            case DELIVERED, RETURNED, CANCELLED -> false; // Các trạng thái cuối cùng, không thể đổi nữa
         };
     }
 }
