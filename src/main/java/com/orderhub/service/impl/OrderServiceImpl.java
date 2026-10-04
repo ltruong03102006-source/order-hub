@@ -5,18 +5,13 @@ import com.orderhub.dto.request.OrderItemRequest;
 import com.orderhub.dto.request.UpdateOrderStatusRequest;
 import com.orderhub.dto.response.OrderItemResponse;
 import com.orderhub.dto.response.OrderResponse;
-import com.orderhub.entity.Order;
-import com.orderhub.entity.OrderItem;
-import com.orderhub.entity.Product;
-import com.orderhub.entity.User;
+import com.orderhub.entity.*;
+import com.orderhub.entity.enums.InventoryActionType;
 import com.orderhub.entity.enums.OrderStatus;
 import com.orderhub.event.OrderCreatedEvent;
 import com.orderhub.exception.AppException;
 import com.orderhub.exception.ErrorCode;
-import com.orderhub.repository.InventoryRepository;
-import com.orderhub.repository.OrderRepository;
-import com.orderhub.repository.ProductRepository;
-import com.orderhub.repository.UserRepository;
+import com.orderhub.repository.*;
 import com.orderhub.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -37,6 +32,7 @@ public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final InventoryRepository inventoryRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final InventoryLogRepository inventoryLogRepository;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -67,6 +63,13 @@ public class OrderServiceImpl implements OrderService {
             if (updatedRows == 0) {
                 throw new AppException(ErrorCode.OUT_OF_STOCK);
             }
+            inventoryLogRepository.save(InventoryLog.builder()
+                    .productId(product.getId())
+                    .changeAmount(itemRequest.getQuantity())
+                    .actionType(InventoryActionType.RESERVE)
+                    .referenceOrderCode(orderCode) // Biến orderCode bạn đã sinh trước đó
+                    .note("Giữ chỗ tồn kho khi tạo đơn hàng mới")
+                    .build());
 
             BigDecimal itemPrice = product.getPrice();
             BigDecimal subtotal = itemPrice.multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
