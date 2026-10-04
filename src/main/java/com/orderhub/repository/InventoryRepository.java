@@ -32,4 +32,10 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
             "i.reservedQuantity = i.reservedQuantity - :qty " +
             "WHERE i.product.id = :productId AND i.reservedQuantity >= :qty")
     int deductStockOnShipment(@Param("productId") Long productId, @Param("qty") Integer qty);
+
+    // Cộng lại total_quantity khi khách trả hàng / giao thất bại hoàn về kho
+    @Modifying
+    @Query("UPDATE Inventory i SET i.totalQuantity = i.totalQuantity + :quantity " +
+            "WHERE i.product.id = :productId")
+    int restockOnReturn(@Param("productId") Long productId, @Param("quantity") Integer quantity);
 }

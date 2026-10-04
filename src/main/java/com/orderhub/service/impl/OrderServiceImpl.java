@@ -130,14 +130,14 @@ public class OrderServiceImpl implements OrderService {
         OrderStatus currentStatus = order.getStatus();
         OrderStatus targetStatus = request.getStatus();
 
-        // 1. Kiểm tra tính hợp lệ của việc chuyển trạng thái
+        // 1. Kiểm tra tính hợp lệ của việc chuyển trạng thái theo State Machine
         if (!currentStatus.canTransitionTo(targetStatus)) {
             throw new AppException(ErrorCode.INVALID_STATE_TRANSITION);
         }
 
         // 2. Kích hoạt nghiệp vụ kho tương ứng
         if (targetStatus == OrderStatus.CANCELLED) {
-            // Hoàn lại lượng reservedQuantity về cho kho
+            // Hoàn lại lượng reservedQuantity về cho kho (khi đơn chưa xuất đi)
             for (OrderItem item : order.getItems()) {
                 inventoryRepository.releaseStock(item.getProduct().getId(), item.getQuantity());
 
@@ -146,14 +146,38 @@ public class OrderServiceImpl implements OrderService {
                         .changeAmount(-item.getQuantity())
                         .actionType(InventoryActionType.RELEASE)
                         .referenceOrderCode(order.getOrderCode())
-                        .note("Hoàn trả tồn kho do đơn hàng bị hủy")
+                        .note("Hoàn trả lượng giữ chỗ do đơn hàng bị hủy")
                         .build());
             }
         } else if (targetStatus == OrderStatus.SHIPPED) {
-            // Hàng xuất đi: trừ đứt cả totalQuantity lẫn reservedQuantity
+            // Hàng xuất đi: trừ cả totalQuantity lẫn reservedQuantity
             for (OrderItem item : order.getItems()) {
                 inventoryRepository.deductStockOnShipment(item.getProduct().getId(), item.getQuantity());
+
+                inventoryLogRepository.save(InventoryLog.builder()
+                        .productId(item.getProduct().getId())
+                        .changeAmount(-item.getQuantity())
+                        .actionType(InventoryActionType.SHIP_DEDUCT)
+                        .referenceOrderCode(order.getOrderCode())
+                        .note("Xuất kho bàn giao cho đơn vị vận chuyển")
+                        .build());
             }
+        } else if (targetStatus == OrderStatus.RETURNED) {
+            // REVERSE LOGISTICS: Hàng giao thất bại quay về kho -> Nhập lại totalQuantity
+            for (OrderItem item : order.getItems()) {
+                inventoryRepository.restockOnReturn(item.getProduct().getId(), item.getQuantity());
+
+                inventoryLogRepository.save(InventoryLog.builder()
+                        .productId(item.getProduct().getId())
+                        .changeAmount(item.getQuantity()) // Số dương vì kho được cộng lại hàng
+                        .actionType(InventoryActionType.RETURN_RESTOCK)
+                        .referenceOrderCode(order.getOrderCode())
+                        .note("Nhập lại kho do giao hàng không thành công / khách hoàn đơn")
+                        .build());
+            }
+        } else if (targetStatus == OrderStatus.DELIVERED) {
+            // Giao thành công: Không cần can thiệp kho, đơn đóng thành công
+            // Có thể ghi log thông báo nếu cần thiết
         }
 
         // 3. Cập nhật trạng thái mới cho đơn hàng
