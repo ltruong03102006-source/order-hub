@@ -1,5 +1,6 @@
 package com.orderhub.dto.request;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -12,10 +13,11 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class OrderItemRequest {
 
-    @NotNull(message = "Product ID không được để trống")
+    @Schema(description = "ID sản phẩm cần mua", example = "1")
+    @NotNull
     Long productId;
 
-    @NotNull(message = "Số lượng không được để trống")
-    @Min(value = 1, message = "Số lượng mua tối thiểu là 1")
+    @Schema(description = "Số lượng mua", example = "1")
+    @Min(1)
     Integer quantity;
 }

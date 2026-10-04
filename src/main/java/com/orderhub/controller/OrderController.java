@@ -18,7 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
-@Tag(name = "Order Controller", description = "Quản lý luồng đặt hàng và tra cứu đơn")
+@Tag(name = "1. Quản Lý Đơn Hàng (Order Engine)", description = "Tạo đơn hàng, khóa giữ kho và quản lý vòng đời đơn")
 public class OrderController {
 
     private final OrderService orderService;
@@ -56,7 +56,10 @@ public class OrderController {
         );
     }
     @PatchMapping("/{orderCode}/status")
-    @Operation(summary = "Cập nhật trạng thái đơn hàng (Duyệt CONFIRMED / Xuất kho SHIPPED)")
+    @Operation(
+            summary = "Cập nhật trạng thái vòng đời đơn hàng",
+            description = "Chuyển trạng thái theo State Machine. Nếu CANCELLED -> hoàn kho (RELEASE). Nếu SHIPPED -> trừ kho thực (SHIP_DEDUCT)"
+    )
     public ResponseEntity<ApiResponse<OrderResponse>> updateOrderStatus(
             @PathVariable String orderCode,
             @Valid @RequestBody UpdateOrderStatusRequest request) {

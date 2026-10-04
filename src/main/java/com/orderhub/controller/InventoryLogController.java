@@ -33,7 +33,7 @@ public class InventoryLogController {
     }
 
     @GetMapping("/order/{orderCode}")
-    @Operation(summary = "Xem lịch sử biến động kho theo Mã đơn hàng")
+    @Operation(summary = "Xem lịch sử biến động kho theo Mã đơn hàng", description = "Kiểm tra toàn bộ vết thay đổi số lượng kho sinh ra từ đơn hàng này.")
     public ResponseEntity<ApiResponse<List<InventoryLogResponse>>> getLogsByOrder(@PathVariable String orderCode) {
         List<InventoryLogResponse> logs = inventoryLogService.getLogsByOrderCode(orderCode);
         return ResponseEntity.ok(ApiResponse.<List<InventoryLogResponse>>builder()
