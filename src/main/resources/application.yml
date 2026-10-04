@@ -30,12 +30,13 @@ application:
 
 # Swagger UI path
 springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
-    tags-sorter: alpha
-    operations-sorter: alpha
   api-docs:
     path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
+    displayRequestDuration: true
 
 order:
   # Số phút đơn hàng tồn tại trước khi bị hủy (để test nhanh, ta có thể đặt là 1 hoặc 2 phút)

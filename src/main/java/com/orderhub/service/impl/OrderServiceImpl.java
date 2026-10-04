@@ -140,6 +140,14 @@ public class OrderServiceImpl implements OrderService {
             // Hoàn lại lượng reservedQuantity về cho kho
             for (OrderItem item : order.getItems()) {
                 inventoryRepository.releaseStock(item.getProduct().getId(), item.getQuantity());
+
+                inventoryLogRepository.save(InventoryLog.builder()
+                        .productId(item.getProduct().getId())
+                        .changeAmount(-item.getQuantity())
+                        .actionType(InventoryActionType.RELEASE)
+                        .referenceOrderCode(order.getOrderCode())
+                        .note("Hoàn trả tồn kho do đơn hàng bị hủy")
+                        .build());
             }
         } else if (targetStatus == OrderStatus.SHIPPED) {
             // Hàng xuất đi: trừ đứt cả totalQuantity lẫn reservedQuantity
