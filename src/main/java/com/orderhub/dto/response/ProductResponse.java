@@ -17,6 +17,8 @@ public class ProductResponse {
     String name;
     BigDecimal price;
     Integer stockQuantity;
+    Long categoryId;
+    String categoryName;
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
 }

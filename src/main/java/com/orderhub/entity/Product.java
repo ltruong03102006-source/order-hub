@@ -32,6 +32,10 @@ public class Product extends BaseEntity {
     @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Inventory inventory;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    Category category;
+
     // Helper method tiện ích để không phá vỡ logic lấy tồn kho
     public Integer getStockQuantity() {
         return inventory != null ? inventory.getAvailableQuantity() : 0;

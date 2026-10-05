@@ -1,5 +1,6 @@
 package com.orderhub.dto.request;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -29,4 +30,8 @@ public class CreateProductRequest {
     @NotNull(message = "Số lượng tồn kho không được để trống")
     @Min(value = 0, message = "Số lượng tồn kho không được âm")
     Integer stockQuantity;
+
+    @Schema(description = "ID của danh mục sản phẩm", example = "1")
+    @NotNull(message = "Danh mục không được để trống")
+    Long categoryId;
 }
