@@ -43,6 +43,7 @@ public class ProductServiceImpl implements ProductService {
                 .sku(request.getSku())
                 .name(request.getName())
                 .price(request.getPrice())
+                .category(category) // 1. Bổ sung gán category vào product ở đây
                 .build();
 
         Inventory inventory = Inventory.builder()
@@ -86,12 +87,16 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private ProductResponse mapToResponse(Product product) {
+        Category category = product.getCategory();
+
         return ProductResponse.builder()
                 .id(product.getId())
                 .sku(product.getSku())
                 .name(product.getName())
                 .price(product.getPrice())
                 .stockQuantity(product.getStockQuantity())
+                .categoryId(category != null ? category.getId() : null)
+                .categoryName(category != null ? category.getName() : null)
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
                 .build();
