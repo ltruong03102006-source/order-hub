@@ -1,5 +1,6 @@
 package com.orderhub.repository;
 
+import com.orderhub.dto.response.CategoryStockResponse;
 import com.orderhub.entity.Inventory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -7,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -44,5 +46,16 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     @Query("UPDATE Inventory i SET i.totalQuantity = i.totalQuantity + :quantity " +
             "WHERE i.product.id = :productId")
     int importStock(@Param("productId") Long productId, @Param("quantity") Integer quantity);
+
+    @Query("SELECT new com.orderhub.dto.response.CategoryStockResponse(" +
+            "COALESCE(c.name, 'Chưa phân loại'), " +
+            "COUNT(p.id), " +
+            "SUM(i.totalQuantity), " +
+            "SUM(i.reservedQuantity)) " +
+            "FROM Inventory i " +
+            "JOIN i.product p " +
+            "LEFT JOIN p.category c " +
+            "GROUP BY c.name")
+    List<CategoryStockResponse> getStockReportByCategory();
 
 }

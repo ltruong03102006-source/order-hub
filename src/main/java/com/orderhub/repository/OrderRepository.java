@@ -1,5 +1,6 @@
 package com.orderhub.repository;
 
+import com.orderhub.dto.response.CategoryRevenueResponse;
 import com.orderhub.entity.Order;
 import com.orderhub.entity.enums.OrderStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,4 +23,15 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @Param("status") OrderStatus status,
             @Param("cutoffTime") LocalDateTime cutoffTime
     );
+    @Query("SELECT new com.orderhub.dto.response.CategoryRevenueResponse(" +
+            "COALESCE(c.name, 'Chưa phân loại'), " +
+            "SUM(oi.quantity), " +
+            "SUM(oi.price * oi.quantity)) " +
+            "FROM OrderItem oi " +
+            "JOIN oi.order o " +
+            "JOIN oi.product p " +
+            "LEFT JOIN p.category c " +
+            "WHERE o.status IN (com.orderhub.entity.enums.OrderStatus.SHIPPED, com.orderhub.entity.enums.OrderStatus.DELIVERED) " +
+            "GROUP BY c.name")
+    List<CategoryRevenueResponse> getRevenueByCategory();
 }
