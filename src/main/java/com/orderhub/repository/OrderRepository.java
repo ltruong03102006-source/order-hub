@@ -26,7 +26,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT new com.orderhub.dto.response.CategoryRevenueResponse(" +
             "COALESCE(c.name, 'Chưa phân loại'), " +
             "SUM(oi.quantity), " +
-            "SUM(oi.price * oi.quantity)) " +
+            "SUM(p.price * oi.quantity)) " +
             "FROM OrderItem oi " +
             "JOIN oi.order o " +
             "JOIN oi.product p " +
