@@ -29,6 +29,9 @@ public class User {
     @Column(nullable = false, length = 100)
     private String fullName;
 
+    @Column(nullable = false, unique = true)
+    private String email;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Role role;
