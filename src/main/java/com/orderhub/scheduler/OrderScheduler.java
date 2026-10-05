@@ -3,6 +3,7 @@ package com.orderhub.scheduler;
 import com.orderhub.entity.Order;
 import com.orderhub.entity.OrderItem;
 import com.orderhub.entity.enums.OrderStatus;
+import com.orderhub.repository.IdempotencyRecordRepository;
 import com.orderhub.repository.InventoryRepository;
 import com.orderhub.repository.OrderRepository;
 import lombok.AccessLevel;
@@ -25,6 +26,7 @@ public class OrderScheduler {
 
     final OrderRepository orderRepository;
     final InventoryRepository inventoryRepository;
+    private final IdempotencyRecordRepository idempotencyRecordRepository;
 
     // Cho phép cấu hình thời gian hết hạn qua application.yml (mặc định 15 phút)
     @Value("${order.expiration-minutes:15}")
@@ -63,5 +65,11 @@ public class OrderScheduler {
                 log.error("[Scheduler] Lỗi khi xử lý hủy đơn quá hạn: {}", order.getOrderCode(), e);
             }
         }
+    }
+    @Scheduled(cron = "0 */10 * * * *") // Chạy mỗi 10 phút
+    @Transactional
+    public void cleanExpiredIdempotencyKeys() {
+        LocalDateTime tenMinutesAgo = LocalDateTime.now().minusMinutes(10);
+        idempotencyRecordRepository.deleteAllByCreatedAtBefore(tenMinutesAgo);
     }
 }

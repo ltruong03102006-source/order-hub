@@ -1,9 +1,15 @@
 package com.orderhub.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderhub.dto.request.CreateOrderRequest;
 import com.orderhub.dto.request.UpdateOrderStatusRequest;
 import com.orderhub.dto.response.ApiResponse;
 import com.orderhub.dto.response.OrderResponse;
+import com.orderhub.entity.IdempotencyRecord;
+import com.orderhub.entity.enums.IdempotencyStatus;
+import com.orderhub.exception.AppException;
+import com.orderhub.exception.ErrorCode;
+import com.orderhub.service.IdempotencyService;
 import com.orderhub.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -22,18 +29,81 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+    private final IdempotencyService idempotencyService;
+    private final ObjectMapper objectMapper;
 
     @PostMapping
-    @Operation(summary = "Tạo đơn hàng mới (Tự động trừ kho an toàn)")
-    public ResponseEntity<ApiResponse<OrderResponse>> createOrder(@Valid @RequestBody CreateOrderRequest request) {
-        OrderResponse response = orderService.createOrder(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-                ApiResponse.<OrderResponse>builder()
-                        .code(HttpStatus.CREATED.value())
-                        .message("Tạo đơn hàng thành công")
-                        .data(response)
-                        .build()
-        );
+    @Operation(
+            summary = "Tạo đơn hàng mới (Hỗ trợ chống trùng lặp Idempotency)",
+            description = "Truyền kèm header X-Idempotency-Key (UUID). Nếu gửi lại cùng một key, hệ thống trả về kết quả cũ mà không trừ kho lần hai."
+    )
+    public ResponseEntity<ApiResponse<OrderResponse>> createOrder(
+            @RequestHeader(value = "X-Idempotency-Key", required = false) String idempotencyKey,
+            @Valid @RequestBody CreateOrderRequest request
+    ) throws Exception {
+
+        // 1. Nếu client không truyền header Idempotency Key -> Xử lý tạo đơn bình thường
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            OrderResponse response = orderService.createOrder(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(
+                    ApiResponse.<OrderResponse>builder()
+                            .code(HttpStatus.CREATED.value())
+                            .message("Tạo đơn hàng thành công")
+                            .data(response)
+                            .build()
+            );
+        }
+
+        // 2. Nếu có truyền key -> Kiểm tra xem đã xử lý trước đó chưa
+        Optional<IdempotencyRecord> existingRecord = idempotencyService.getRecord(idempotencyKey);
+        if (existingRecord.isPresent()) {
+            IdempotencyRecord record = existingRecord.get();
+
+            // Nếu đang trong tiến trình xử lý đơn lần 1 -> Báo xung đột 409
+            if (record.getStatus() == IdempotencyStatus.PROCESSING) {
+                throw new AppException(ErrorCode.IDEMPOTENCY_KEY_CONFLICT);
+            }
+
+            // Nếu đơn lần 1 đã hoàn thành -> Lấy JSON cache trả về ngay
+            if (record.getStatus() == IdempotencyStatus.COMPLETED && record.getResponseBody() != null) {
+                OrderResponse cachedResponse = objectMapper.readValue(record.getResponseBody(), OrderResponse.class);
+                return ResponseEntity.ok(
+                        ApiResponse.<OrderResponse>builder()
+                                .code(HttpStatus.OK.value())
+                                .message("Đơn hàng đã được tạo trước đó (Phản hồi từ Cache Idempotency)")
+                                .data(cachedResponse)
+                                .build()
+                );
+            }
+        }
+
+        // 3. Khóa key lại để xử lý tạo đơn lần đầu
+        try {
+            idempotencyService.lockKey(idempotencyKey);
+        } catch (Exception ex) {
+            throw new AppException(ErrorCode.IDEMPOTENCY_KEY_CONFLICT);
+        }
+
+        try {
+            // Chạy luồng tạo đơn và giữ tồn kho
+            OrderResponse response = orderService.createOrder(request);
+
+            // Lưu kết quả JSON lại vào database để phục vụ các lần retry tiếp theo
+            String jsonResult = objectMapper.writeValueAsString(response);
+            idempotencyService.saveSuccessResponse(idempotencyKey, jsonResult);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(
+                    ApiResponse.<OrderResponse>builder()
+                            .code(HttpStatus.CREATED.value())
+                            .message("Tạo đơn hàng thành công")
+                            .data(response)
+                            .build()
+            );
+        } catch (Exception ex) {
+            // Nếu tạo đơn thất bại do hết tồn kho hoặc lỗi logic -> Nhả key để người dùng có thể gửi lại
+            idempotencyService.unlockKey(idempotencyKey);
+            throw ex;
+        }
     }
 
     @GetMapping("/{orderCode}")
@@ -55,6 +125,7 @@ public class OrderController {
                         .build()
         );
     }
+
     @PatchMapping("/{orderCode}/status")
     @Operation(
             summary = "Cập nhật trạng thái vòng đời đơn hàng",
