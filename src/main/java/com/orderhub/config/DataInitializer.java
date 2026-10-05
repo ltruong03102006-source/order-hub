@@ -27,14 +27,14 @@ public class DataInitializer implements CommandLineRunner {
                     .username("admin")
                     .password("admin123")
                     .email("admin@orderhub.com")
-                    .role(Role.ROLE_ADMIN)
+                    .role(Role.ADMIN)
                     .build();
 
             User customer = User.builder()
                     .username("customer")
                     .password("customer123")
                     .email("customer@orderhub.com")
-                    .role(Role.ROLE_CUSTOMER)
+                    .role(Role.CUSTOMER)
                     .build();
 
             userRepository.saveAll(List.of(admin, customer));
