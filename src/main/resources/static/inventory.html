@@ -19,14 +19,13 @@
             <a href="/index.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
                 <span></span> Tổng quan (Dashboard)
             </a>
-            <!-- THÊM DÒNG NÀY: -->
             <a href="/categories.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
                 <span></span> Quản lý Danh mục
             </a>
             <a href="/products.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
                 <span></span> Quản lý Sản phẩm
             </a>
-            <a href="/inventory.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
+            <a href="/inventory.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-indigo-600 text-white font-medium text-sm">
                 <span></span> Quản lý Kho hàng
             </a>
             <a href="/orders.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
@@ -73,25 +72,56 @@
 
         <!-- SỔ CÁI / NHẬT KÝ BIẾN ĐỘNG KHO (INVENTORY LOGS) -->
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="p-4 border-b border-slate-100 font-bold text-sm text-slate-700 flex justify-between items-center">
-                <span>Nhật Ký Biến Động Kho (Audit Logs)</span>
-                <button onclick="loadLogs()" class="text-xs text-indigo-600 hover:underline">Tải lại log</button>
+            <div class="p-4 border-b border-slate-100 flex flex-wrap gap-4 justify-between items-center bg-slate-50/50">
+                <div>
+                    <h3 class="font-bold text-sm text-slate-700">Nhật Ký Biến Động Kho (Audit Logs)</h3>
+                    <p class="text-xs text-slate-400">Lịch sử xuất nhập, giữ chỗ và giải phóng tồn kho</p>
+                </div>
+
+                <!-- BỘ LỌC THEO NGÀY THÁNG NĂM -->
+                <div class="flex flex-wrap items-center gap-2 text-xs">
+                    <div class="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 shadow-sm">
+                        <span class="text-slate-400">Từ:</span>
+                        <input type="date" id="filterFromDate" class="outline-none text-slate-700 font-medium bg-transparent cursor-pointer">
+                    </div>
+
+                    <div class="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 shadow-sm">
+                        <span class="text-slate-400">Đến:</span>
+                        <input type="date" id="filterToDate" class="outline-none text-slate-700 font-medium bg-transparent cursor-pointer">
+                    </div>
+
+                    <button onclick="applyDateFilter()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 rounded-lg transition shadow-sm">
+                        Lọc
+                    </button>
+                    <button onclick="filterToday()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-2.5 py-1.5 rounded-lg transition">
+                        Hôm nay
+                    </button>
+                    <button onclick="clearDateFilter()" class="border border-slate-200 hover:bg-slate-100 text-slate-500 font-semibold px-2.5 py-1.5 rounded-lg transition">
+                        Xóa lọc
+                    </button>
+                    <button onclick="loadLogs()" class="text-xs text-indigo-600 hover:underline ml-1 font-semibold">
+                        Tải lại
+                    </button>
+                </div>
             </div>
-            <table class="w-full text-left text-sm">
-                <thead class="bg-slate-50 text-slate-400 text-xs uppercase border-b border-slate-200">
-                <tr>
-                    <th class="px-5 py-3">LOG ID</th>
-                    <th class="px-5 py-3">SẢN PHẨM</th>
-                    <th class="px-5 py-3">LOẠI GIAO DỊCH</th>
-                    <th class="px-5 py-3 text-center">SỐ LƯỢNG THAY ĐỔI</th>
-                    <th class="px-5 py-3">GHI CHÚ</th>
-                    <th class="px-5 py-3 text-right">THỜI GIAN</th>
-                </tr>
-                </thead>
-                <tbody id="logBody" class="divide-y divide-slate-100 font-mono text-xs">
-                <tr><td colspan="6" class="text-center py-6 text-slate-400 font-sans">Đang tải nhật ký...</td></tr>
-                </tbody>
-            </table>
+
+            <div class="max-h-[480px] overflow-y-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-slate-400 text-xs uppercase border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+                    <tr>
+                        <th class="px-5 py-3">LOG ID</th>
+                        <th class="px-5 py-3">SẢN PHẨM</th>
+                        <th class="px-5 py-3">LOẠI GIAO DỊCH</th>
+                        <th class="px-5 py-3 text-center">SỐ LƯỢNG THAY ĐỔI</th>
+                        <th class="px-5 py-3">GHI CHÚ</th>
+                        <th class="px-5 py-3 text-right">THỜI GIAN</th>
+                    </tr>
+                    </thead>
+                    <tbody id="logBody" class="divide-y divide-slate-100 font-mono text-xs">
+                    <tr><td colspan="6" class="text-center py-6 text-slate-400 font-sans">Đang tải nhật ký...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </main>
 </div>
@@ -127,6 +157,9 @@
 <script>
     renderCurrentUser();
 
+    let productMap = {};
+    let allLogsCache = [];
+
     async function loadInventory() {
         try {
             const res = await fetch(`${API_BASE}/products`, { headers: getAuthHeaders() });
@@ -161,14 +194,10 @@
                 tbody.appendChild(tr);
             });
         } catch (e) {
-            console.error("Lỗi khi tải danh sách tồn kho:", e);
+            console.error("Lỗi khi tải kho hàng:", e);
         }
     }
 
-    // Biến lưu danh sách sản phẩm để tra cứu tên từ ID
-    let productMap = {};
-
-    // Hàm hỗ trợ tải danh sách sản phẩm để lấy Tên theo ID
     async function prepareProductMap() {
         try {
             const res = await fetch(`${API_BASE}/products`, { headers: getAuthHeaders() });
@@ -181,6 +210,7 @@
             console.error("Không thể tải danh mục sản phẩm:", e);
         }
     }
+
     async function loadLogs() {
         try {
             if (Object.keys(productMap).length === 0) {
@@ -189,90 +219,128 @@
 
             const res = await fetch(`${API_BASE}/inventories/logs`, { headers: getAuthHeaders() });
             const json = await res.json();
-            const tbody = document.getElementById('logBody');
-            tbody.innerHTML = '';
 
-            const list = Array.isArray(json)
+            allLogsCache = Array.isArray(json)
                 ? json
                 : (json.data?.content || json.data || []);
 
-            if (!list || list.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-6 text-slate-400">Chưa có giao dịch kho nào</td></tr>';
-                return;
-            }
-
-            list.forEach(log => {
-                // 1. Tên sản phẩm theo Product ID
-                const pid = log.productId;
-                const productName = pid ? (productMap[pid] || `Sản phẩm #${pid}`) : 'Hệ thống';
-
-                // 2. LẤY ĐÚNG TRƯỜNG changeAmount TỪ BACKEND
-                const qty = log.changeAmount ?? 0;
-
-                // 3. LẤY ĐÚNG TRƯỜNG actionType TỪ BACKEND
-                const action = (log.actionType || 'IMPORT').toUpperCase();
-
-                // Làm sạch ghi chú, bỏ tiền tố N/A nếu có
-                let cleanNote = log.note || '';
-                cleanNote = cleanNote.replace(/^Nhập kho từ lô hàng:\s*N\/A\.?\s*/i, '').trim();
-                if (!cleanNote) {
-                    if (action === 'IMPORT') cleanNote = 'Nhập kho bổ sung hàng hóa';
-                    else if (action === 'RESERVE') cleanNote = 'Giữ chỗ tồn kho khi tạo đơn hàng';
-                    else if (action === 'CANCEL_RESERVE') cleanNote = 'Hoàn trả tồn kho do hủy đơn';
-                    else cleanNote = 'Biến động tồn kho';
-                }
-
-                // Thêm nhãn và màu sắc cho RELEASE (Hoàn giữ chỗ)
-                let badgeClass = 'bg-slate-100 text-slate-700';
-                let actionLabel = action;
-
-                if (action === 'IMPORT') {
-                    badgeClass = 'bg-emerald-50 text-emerald-700 border border-emerald-200';
-                    actionLabel = 'NHẬP KHO';
-                } else if (action === 'RESERVE') {
-                    badgeClass = 'bg-amber-50 text-amber-700 border border-amber-200';
-                    actionLabel = 'GIỮ CHỖ';
-                } else if (action === 'RELEASE' || action === 'CANCEL_RESERVE') {
-                    badgeClass = 'bg-purple-50 text-purple-700 border border-purple-200';
-                    actionLabel = 'HOÀN GIỮ CHỖ';
-                } else if (action === 'OUTBOUND' || action === 'EXPORT' || action === 'SHIP_DEDUCT') {
-                    badgeClass = 'bg-blue-50 text-blue-700 border border-blue-200';
-                    actionLabel = 'XUẤT KHO';
-                }
-
-                const time = log.createdAt ? new Date(log.createdAt).toLocaleString('vi-VN') : '-';
-
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50 transition border-b border-slate-100';
-                tr.innerHTML = `
-        <td class="px-5 py-3 font-mono text-xs text-slate-400">#${log.id}</td>
-        <td class="px-5 py-3">
-          <div class="font-semibold text-slate-800 text-sm">${productName}</div>
-          <div class="text-[11px] text-slate-400 font-mono">Mã SP: #${pid}</div>
-        </td>
-        <td class="px-5 py-3">
-          <span class="px-2.5 py-1 rounded-md text-xs font-bold ${badgeClass}">
-            ${actionLabel}
-          </span>
-        </td>
-        <td class="px-5 py-3 text-center">
-          <span class="font-bold text-sm ${qty < 0 ? 'text-rose-600' : 'text-emerald-600'}">
-            ${qty > 0 ? '+' : ''}${qty}
-          </span>
-        </td>
-        <td class="px-5 py-3 text-sm text-slate-700 font-medium">
-          ${cleanNote}
-          ${log.referenceOrderCode ? `<span class="ml-1 text-xs text-indigo-600 font-mono">(${log.referenceOrderCode})</span>` : ''}
-        </td>
-        <td class="px-5 py-3 text-right text-xs font-mono text-slate-400">
-          ${time}
-        </td>
-      `;
-                tbody.appendChild(tr);
-            });
+            applyDateFilter();
         } catch (e) {
             console.error("Lỗi khi tải logs:", e);
         }
+    }
+
+    function renderLogsTable(list) {
+        const tbody = document.getElementById('logBody');
+        tbody.innerHTML = '';
+
+        if (!list || list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-slate-400 font-sans">Không tìm thấy giao dịch nào</td></tr>';
+            return;
+        }
+
+        list.forEach(log => {
+            const pid = log.productId;
+            const productName = pid ? (productMap[pid] || `Sản phẩm #${pid}`) : 'Hệ thống';
+            const qty = log.changeAmount ?? 0;
+            const action = (log.actionType || 'IMPORT').toUpperCase();
+
+            let cleanNote = log.note || '';
+            cleanNote = cleanNote.replace(/^Nhập kho từ lô hàng:\s*N\/A\.?\s*/i, '').trim();
+            if (!cleanNote) {
+                if (action === 'IMPORT') cleanNote = 'Nhập kho bổ sung hàng hóa';
+                else if (action === 'RESERVE') cleanNote = 'Giữ chỗ tồn kho khi tạo đơn hàng';
+                else if (action === 'RELEASE' || action === 'CANCEL_RESERVE') cleanNote = 'Giải phóng tồn kho giữ chỗ';
+                else cleanNote = 'Biến động tồn kho';
+            }
+
+            let badgeClass = 'bg-slate-100 text-slate-700';
+            let actionLabel = action;
+            if (action === 'IMPORT') {
+                badgeClass = 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+                actionLabel = 'NHẬP KHO';
+            } else if (action === 'RESERVE') {
+                badgeClass = 'bg-amber-50 text-amber-700 border border-amber-200';
+                actionLabel = 'GIỮ CHỖ';
+            } else if (action === 'RELEASE' || action === 'CANCEL_RESERVE') {
+                badgeClass = 'bg-purple-50 text-purple-700 border border-purple-200';
+                actionLabel = 'HOÀN GIỮ CHỖ';
+            } else if (action === 'OUTBOUND' || action === 'EXPORT' || action === 'SHIP_DEDUCT') {
+                badgeClass = 'bg-blue-50 text-blue-700 border border-blue-200';
+                actionLabel = 'XUẤT KHO';
+            }
+
+            const time = log.createdAt ? new Date(log.createdAt).toLocaleString('vi-VN') : '-';
+
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-slate-50 transition border-b border-slate-100';
+            tr.innerHTML = `
+                <td class="px-5 py-3 font-mono text-xs text-slate-400">#${log.id}</td>
+                <td class="px-5 py-3">
+                    <div class="font-semibold text-slate-800 text-sm font-sans">${productName}</div>
+                    <div class="text-[11px] text-slate-400 font-mono">Mã SP: #${pid}</div>
+                </td>
+                <td class="px-5 py-3">
+                    <span class="px-2.5 py-1 rounded-md text-xs font-bold ${badgeClass}">
+                        ${actionLabel}
+                    </span>
+                </td>
+                <td class="px-5 py-3 text-center">
+                    <span class="font-bold text-sm ${qty < 0 ? 'text-rose-600' : 'text-emerald-600'}">
+                        ${qty > 0 ? '+' : ''}${qty}
+                    </span>
+                </td>
+                <td class="px-5 py-3 text-sm text-slate-700 font-medium font-sans">
+                    ${cleanNote}
+                    ${log.referenceOrderCode ? `<span class="ml-1 text-xs text-indigo-600 font-mono">(${log.referenceOrderCode})</span>` : ''}
+                </td>
+                <td class="px-5 py-3 text-right text-xs font-mono text-slate-400">
+                    ${time}
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function applyDateFilter() {
+        const fromInput = document.getElementById('filterFromDate');
+        const toInput = document.getElementById('filterToDate');
+        const fromVal = fromInput ? fromInput.value : '';
+        const toVal = toInput ? toInput.value : '';
+
+        let filtered = [...allLogsCache];
+
+        if (fromVal) {
+            const fromDate = new Date(fromVal);
+            fromDate.setHours(0, 0, 0, 0);
+            filtered = filtered.filter(item => item.createdAt && new Date(item.createdAt) >= fromDate);
+        }
+
+        if (toVal) {
+            const toDate = new Date(toVal);
+            toDate.setHours(23, 59, 59, 999);
+            filtered = filtered.filter(item => item.createdAt && new Date(item.createdAt) <= toDate);
+        }
+
+        renderLogsTable(filtered);
+    }
+
+    function filterToday() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        const todayStr = `${y}-${m}-${d}`;
+
+        document.getElementById('filterFromDate').value = todayStr;
+        document.getElementById('filterToDate').value = todayStr;
+        applyDateFilter();
+    }
+
+    function clearDateFilter() {
+        document.getElementById('filterFromDate').value = '';
+        document.getElementById('filterToDate').value = '';
+        renderLogsTable(allLogsCache);
     }
 
     function openImportModal() { document.getElementById('modalImport').classList.remove('hidden'); }

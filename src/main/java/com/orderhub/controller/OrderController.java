@@ -152,4 +152,11 @@ public class OrderController {
                         .build()
         );
     }
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<OrderResponse>>> getAllOrders() {
+        return ResponseEntity.ok(ApiResponse.<List<OrderResponse>>builder()
+                .message("Lấy danh sách đơn hàng thành công")
+                .data(orderService.getAllOrders())
+                .build());
+    }
 }
