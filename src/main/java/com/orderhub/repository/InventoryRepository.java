@@ -58,4 +58,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
             "GROUP BY c.name")
     List<CategoryStockResponse> getStockReportByCategory();
 
+    @Query("SELECT COUNT(i) FROM Inventory i WHERE (i.totalQuantity - i.reservedQuantity) <= :threshold")
+    long countLowStockProducts(@Param("threshold") int threshold);
+
 }

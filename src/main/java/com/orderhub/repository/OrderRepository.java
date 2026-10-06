@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -34,4 +35,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "WHERE o.status IN (com.orderhub.entity.enums.OrderStatus.SHIPPED, com.orderhub.entity.enums.OrderStatus.DELIVERED) " +
             "GROUP BY c.name")
     List<CategoryRevenueResponse> getRevenueByCategory();
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.status IN ('SHIPPED', 'DELIVERED')")
+    BigDecimal calculateTotalRevenue();
 }

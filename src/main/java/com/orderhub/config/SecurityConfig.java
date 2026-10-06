@@ -37,6 +37,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/inventories/import").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/orders/{orderCode}/status").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/categories/**", "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers("/api/dashboard/**").hasRole("ADMIN")
 
                         // 4. Nghiệp vụ Khách hàng: CUSTOMER và ADMIN đều được phép
                         .requestMatchers(HttpMethod.POST, "/api/orders/**").hasAnyRole("CUSTOMER", "ADMIN")
