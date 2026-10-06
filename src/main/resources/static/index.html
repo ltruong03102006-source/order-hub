@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OrderHub - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/auth-guard.js"></script>
+</head>
+<body class="bg-slate-50 flex h-screen overflow-hidden text-slate-800">
+
+<!-- SIDEBAR -->
+<aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0">
+    <div>
+        <div class="p-6 border-b border-slate-800">
+            <h1 class="text-xl font-black text-indigo-400">OrderHub OMS</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Control Center</p>
+        </div>
+        <nav class="p-4 space-y-1">
+            <a href="/index.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
+                <span></span> Tổng quan (Dashboard)
+            </a>
+            <!-- THÊM DÒNG NÀY: -->
+            <a href="/categories.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
+                <span></span> Quản lý Danh mục
+            </a>
+            <a href="/products.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
+                <span></span> Quản lý Sản phẩm
+            </a>
+            <a href="/inventory.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
+                <span></span> Quản lý Kho hàng
+            </a>
+            <a href="/orders.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
+                <span></span> Quản lý Đơn hàng
+            </a>
+        </nav>
+    </div>
+    <div class="p-4 border-t border-slate-800">
+        <div class="text-xs text-slate-400 mb-2 font-mono" id="userDisplay">Admin</div>
+        <button onclick="logout()" class="w-full bg-slate-800 hover:bg-rose-600 hover:text-white py-2 rounded-lg text-xs font-semibold transition">Đăng xuất</button>
+    </div>
+</aside>
+
+<!-- MAIN AREA -->
+<div class="flex-1 flex flex-col overflow-y-auto">
+    <header class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center shadow-sm">
+        <h2 class="text-lg font-bold text-slate-800">Báo Cáo Tổng Quan Hệ Thống</h2>
+        <button onclick="loadDashboard()" class="text-xs bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg border font-medium">Làm mới ↻</button>
+    </header>
+
+    <main class="p-8 space-y-6">
+        <!-- 4 THẺ KPI -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <p class="text-xs font-bold uppercase text-slate-400 tracking-wider">Doanh thu giao thành công</p>
+                <p id="kpiRevenue" class="text-2xl font-extrabold text-emerald-600 mt-2">0 đ</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <p class="text-xs font-bold uppercase text-slate-400 tracking-wider">Tổng đơn hàng</p>
+                <p id="kpiOrders" class="text-2xl font-extrabold text-indigo-600 mt-2">0</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <p class="text-xs font-bold uppercase text-slate-400 tracking-wider">Mặt hàng kinh doanh</p>
+                <p id="kpiProducts" class="text-2xl font-extrabold text-slate-800 mt-2">0</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <p class="text-xs font-bold uppercase text-slate-400 tracking-wider">Cảnh báo kho thấp</p>
+                <p id="kpiLowStock" class="text-2xl font-extrabold text-rose-500 mt-2">0</p>
+            </div>
+        </div>
+
+        <!-- 2 BẢNG THỐNG KÊ CHI TIẾT THEO DANH MỤC -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Doanh thu theo danh mục -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <span>📈</span> Doanh thu theo Danh mục
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-slate-400 text-xs uppercase border-b border-slate-100">
+                        <tr>
+                            <th class="py-2.5 px-3">Danh mục</th>
+                            <th class="py-2.5 px-3 text-right">Doanh thu</th>
+                        </tr>
+                        </thead>
+                        <tbody id="categoryRevenueBody" class="divide-y divide-slate-100">
+                        <tr><td colspan="2" class="text-center py-4 text-slate-400">Đang tải...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tồn kho theo danh mục -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <span>⚖️</span> Cân đối Kho theo Danh mục
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-slate-400 text-xs uppercase border-b border-slate-100">
+                        <tr>
+                            <th class="py-2.5 px-3">Danh mục</th>
+                            <th class="py-2.5 px-3 text-center">Tổng tồn</th>
+                            <th class="py-2.5 px-3 text-center">Đang giữ chỗ</th>
+                        </tr>
+                        </thead>
+                        <tbody id="categoryStockBody" class="divide-y divide-slate-100">
+                        <tr><td colspan="3" class="text-center py-4 text-slate-400">Đang tải...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    renderCurrentUser();
+
+    async function loadDashboard() {
+        // 1. Thống kê KPI
+        try {
+            const resStats = await fetch(`${API_BASE}/dashboard/stats`, { headers: getAuthHeaders() });
+            const jsonStats = await resStats.json();
+            if (resStats.ok && jsonStats.data) {
+                const d = jsonStats.data;
+                document.getElementById('kpiRevenue').innerText = Number(d.totalRevenue || 0).toLocaleString() + ' đ';
+                document.getElementById('kpiOrders').innerText = d.totalOrders ?? 0;
+                document.getElementById('kpiProducts').innerText = d.totalProducts ?? 0;
+                document.getElementById('kpiLowStock').innerText = d.lowStockProductsCount ?? 0;
+            }
+        } catch (e) { console.error(e); }
+
+        // 2. Doanh thu theo Category
+        try {
+            const resRev = await fetch(`${API_BASE}/dashboard/revenue-by-category`, { headers: getAuthHeaders() });
+            const jsonRev = await resRev.json();
+            const tbodyRev = document.getElementById('categoryRevenueBody');
+            tbodyRev.innerHTML = '';
+            const listRev = jsonRev.data || [];
+            if (listRev.length === 0) {
+                tbodyRev.innerHTML = '<tr><td colspan="2" class="text-center py-4 text-slate-400">Chưa có số liệu phát sinh</td></tr>';
+            } else {
+                listRev.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+              <td class="py-2.5 px-3 font-semibold text-slate-700">${item.categoryName || 'Không xác định'}</td>
+              <td class="py-2.5 px-3 text-right font-bold text-emerald-600">${Number(item.revenue || item.totalRevenue || 0).toLocaleString()} đ</td>
+            `;
+                    tbodyRev.appendChild(tr);
+                });
+            }
+        } catch (e) { console.error(e); }
+
+        // 3. Tồn kho theo Category
+        try {
+            const resStock = await fetch(`${API_BASE}/dashboard/stock-by-category`, { headers: getAuthHeaders() });
+            const jsonStock = await resStock.json();
+            const tbodyStock = document.getElementById('categoryStockBody');
+            tbodyStock.innerHTML = '';
+            const listStock = jsonStock.data || [];
+            if (listStock.length === 0) {
+                tbodyStock.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-slate-400">Chưa có số liệu kho</td></tr>';
+            } else {
+                listStock.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+              <td class="py-2.5 px-3 font-semibold text-slate-700">${item.categoryName || 'Không xác định'}</td>
+              <td class="py-2.5 px-3 text-center font-bold text-indigo-600">${item.totalStock ?? item.totalQuantity ?? 0}</td>
+              <td class="py-2.5 px-3 text-center font-bold text-amber-500">${item.reservedStock ?? item.reservedQuantity ?? 0}</td>
+            `;
+                    tbodyStock.appendChild(tr);
+                });
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    loadDashboard();
+</script>
+</body>
+</html>

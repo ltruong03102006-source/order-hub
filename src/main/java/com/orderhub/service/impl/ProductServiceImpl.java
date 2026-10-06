@@ -1,6 +1,7 @@
 package com.orderhub.service.impl;
 
 import com.orderhub.dto.request.CreateProductRequest;
+import com.orderhub.dto.request.UpdateProductRequest;
 import com.orderhub.dto.request.UpdateStockRequest;
 import com.orderhub.dto.response.ProductResponse;
 import com.orderhub.entity.Category;
@@ -86,19 +87,65 @@ public class ProductServiceImpl implements ProductService {
         return mapToResponse(inventory.getProduct());
     }
 
+    @Override
+    @Transactional
+    public ProductResponse updateProduct(Long id, UpdateProductRequest request) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với id: " + id));
+
+        if (request.getSku() != null && !request.getSku().isBlank()) {
+            product.setSku(request.getSku());
+        }
+        product.setName(request.getName());
+        product.setPrice(request.getPrice());
+
+        if (request.getCategoryId() != null) {
+            Category category = categoryRepository.findById(request.getCategoryId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục với id: " + request.getCategoryId()));
+            product.setCategory(category);
+        }
+
+        Product updatedProduct = productRepository.save(product);
+
+        // Dùng hàm map response sẵn có của bạn hoặc builder:
+        return ProductResponse.builder()
+                .id(updatedProduct.getId())
+                .sku(updatedProduct.getSku())
+                .name(updatedProduct.getName())
+                .price(updatedProduct.getPrice())
+                .categoryName(updatedProduct.getCategory() != null ? updatedProduct.getCategory().getName() : null)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void deleteProduct(Long id) {
+        if (!productRepository.existsById(id)) {
+            throw new RuntimeException("Không tìm thấy sản phẩm với id: " + id);
+        }
+        productRepository.deleteById(id);
+    }
+
     private ProductResponse mapToResponse(Product product) {
-        Category category = product.getCategory();
+        Inventory inv = product.getInventory();
+
+        int available = (inv != null && inv.getAvailableQuantity() != null) ? inv.getAvailableQuantity() : 0;
+        int reserved = (inv != null && inv.getReservedQuantity() != null) ? inv.getReservedQuantity() : 0;
+        int total = (inv != null && inv.getTotalQuantity() != null) ? inv.getTotalQuantity() : (available + reserved);
 
         return ProductResponse.builder()
                 .id(product.getId())
-                .sku(product.getSku())
                 .name(product.getName())
+                .sku(product.getSku())
                 .price(product.getPrice())
-                .stockQuantity(product.getStockQuantity())
-                .categoryId(category != null ? category.getId() : null)
-                .categoryName(category != null ? category.getName() : null)
+                .stockQuantity(available)
+                .totalQuantity(total)
+                .reservedQuantity(product.getInventory() != null ? product.getInventory().getReservedQuantity() : 0)
+                .categoryId(product.getCategory() != null ? product.getCategory().getId() : null)
+                .categoryName(product.getCategory() != null ? product.getCategory().getName() : null)
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
                 .build();
     }
+
 }

@@ -1,6 +1,7 @@
 package com.orderhub.controller;
 
 import com.orderhub.dto.request.CreateProductRequest;
+import com.orderhub.dto.request.UpdateProductRequest;
 import com.orderhub.dto.request.UpdateStockRequest;
 import com.orderhub.dto.response.ApiResponse;
 import com.orderhub.dto.response.ProductResponse;
@@ -52,6 +53,31 @@ public class ProductController {
         return ResponseEntity.ok(
                 ApiResponse.<ProductResponse>builder()
                         .data(productService.getProductById(id))
+                        .build()
+        );
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Cập nhật thông tin sản phẩm (không ảnh hưởng tồn kho)")
+    public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateProductRequest request) { // <-- Dùng UpdateProductRequest
+        return ResponseEntity.ok(
+                ApiResponse.<ProductResponse>builder()
+                        .message("Cập nhật thông tin sản phẩm thành công")
+                        .data(productService.updateProduct(id, request))
+                        .build()
+        );
+    }
+
+    // 2. THÊM API XÓA SẢN PHẨM
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Xóa sản phẩm theo ID")
+    public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable Long id) {
+        productService.deleteProduct(id);
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder()
+                        .message("Xóa sản phẩm thành công")
                         .build()
         );
     }

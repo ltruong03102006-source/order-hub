@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OrderHub - Quản lý Sản phẩm</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/auth-guard.js"></script>
+</head>
+<body class="bg-slate-50 flex h-screen overflow-hidden text-slate-800">
+
+<!-- SIDEBAR -->
+<aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0">
+    <div>
+        <div class="p-6 border-b border-slate-800">
+            <h1 class="text-xl font-black text-indigo-400">OrderHub OMS</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Control Center</p>
+        </div>
+        <nav class="p-4 space-y-1">
+            <a href="/index.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
+                <span></span> Tổng quan (Dashboard)
+            </a>
+            <!-- THÊM DÒNG NÀY: -->
+            <a href="/categories.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
+                <span></span> Quản lý Danh mục
+            </a>
+            <a href="/products.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
+                <span></span> Quản lý Sản phẩm
+            </a>
+            <a href="/inventory.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
+                <span></span> Quản lý Kho hàng
+            </a>
+            <a href="/orders.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
+                <span></span> Quản lý Đơn hàng
+            </a>
+        </nav>
+    </div>
+    <div class="p-4 border-t border-slate-800">
+        <div class="text-xs text-slate-400 mb-2 font-mono" id="userDisplay">Admin</div>
+        <button onclick="logout()" class="w-full bg-slate-800 hover:bg-rose-600 hover:text-white py-2 rounded-lg text-xs font-semibold transition">Đăng xuất</button>
+    </div>
+</aside>
+
+<!-- MAIN AREA -->
+<div class="flex-1 flex flex-col overflow-y-auto">
+    <header class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center shadow-sm">
+        <div>
+            <h2 class="text-lg font-bold text-slate-800">Danh Mục Hàng Hóa (Master Data)</h2>
+            <p class="text-xs text-slate-500">Quản lý toàn bộ thông tin sản phẩm và dữ liệu gốc</p>
+        </div>
+        <button onclick="openModalCreate()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-sm">
+            + Thêm Sản Phẩm Mới
+        </button>
+    </header>
+
+    <main class="p-8 space-y-6">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 text-slate-400 text-xs uppercase border-b border-slate-200">
+                <tr>
+                    <th class="px-5 py-3">ID</th>
+                    <th class="px-5 py-3">Mã SKU</th>
+                    <th class="px-5 py-3">Tên sản phẩm</th>
+                    <th class="px-5 py-3">Danh mục</th>
+                    <th class="px-5 py-3 text-right">Giá niêm yết</th>
+                    <th class="px-5 py-3 text-center">Tồn khả dụng</th>
+                    <th class="px-5 py-3 text-center">Hành động</th>
+                </tr>
+                </thead>
+                <tbody id="productBody" class="divide-y divide-slate-100">
+                <tr><td colspan="7" class="text-center py-6 text-slate-400">Đang tải danh sách...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<!-- MODAL THÊM / SỬA SẢN PHẨM -->
+<div id="productModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-6 space-y-4 my-8">
+        <div class="flex justify-between items-center border-b pb-3">
+            <div>
+                <h3 id="modalTitle" class="font-bold text-slate-800 text-base">Thêm Sản Phẩm Mới</h3>
+                <p class="text-xs text-slate-400">Điền thông tin hàng hóa để cập nhật Master Data</p>
+            </div>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700 text-lg">✕</button>
+        </div>
+
+        <!-- Ẩn ID sản phẩm để phân biệt Thêm hay Sửa -->
+        <input type="hidden" id="editProductId" value="">
+
+        <div class="space-y-4 text-sm">
+            <!-- Hàng 1: SKU & Danh mục -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Mã SKU <span class="text-rose-500">*</span></label>
+                    <input id="prodSku" type="text" placeholder="IPHONE-20-PRO" class="w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500 uppercase font-mono">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Danh mục <span class="text-rose-500">*</span></label>
+                    <select id="prodCategory" class="w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                        <!-- Render options động -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- Hàng 2: Tên sản phẩm -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Tên sản phẩm <span class="text-rose-500">*</span></label>
+                <input id="prodName" type="text" placeholder="Điện thoại iPhone 20 Pro Max 512GB" class="w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+            <!-- Hàng 3: Giá bán & Tồn kho ban đầu -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Giá bán (VND) <span class="text-rose-500">*</span></label>
+                    <input id="prodPrice" type="number" placeholder="30000000" min="0" class="w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div id="stockWrapper">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Tồn kho ban đầu</label>
+                    <input id="prodStock" type="number" value="50" min="0" placeholder="50" class="w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+            </div>
+
+            <!-- Hàng 4: Mô tả chi tiết -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Mô tả sản phẩm</label>
+                <textarea id="prodDesc" rows="3" placeholder="Mô tả thông số kỹ thuật, cấu hình, xuất xứ..." class="w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-4 border-t">
+            <button onclick="closeModal()" class="px-4 py-2 border rounded-xl text-xs font-semibold hover:bg-slate-100 transition">Hủy</button>
+            <button id="btnSubmit" onclick="handleSubmitProduct()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition shadow-sm">
+                Lưu Sản Phẩm
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    renderCurrentUser();
+
+    // Bộ nhớ tạm cache danh sách sản phẩm để fill vào form Sửa
+    let productsCache = [];
+
+    async function loadProducts() {
+        try {
+            const res = await fetch(`${API_BASE}/products`, { headers: getAuthHeaders() });
+            const json = await res.json();
+            const tbody = document.getElementById('productBody');
+            tbody.innerHTML = '';
+            productsCache = Array.isArray(json) ? json : (json.data || []);
+
+            if (productsCache.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-slate-400">Chưa có sản phẩm nào</td></tr>';
+                return;
+            }
+
+            productsCache.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+            <td class="px-5 py-3 font-semibold text-slate-500">#${p.id}</td>
+            <td class="px-5 py-3 font-mono font-medium text-indigo-600">${p.sku}</td>
+            <td class="px-5 py-3 font-medium text-slate-800">${p.name}</td>
+            <td class="px-5 py-3"><span class="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md text-xs font-medium">${p.categoryName || 'Chưa gán'}</span></td>
+            <td class="px-5 py-3 text-right font-bold text-slate-700">${Number(p.price).toLocaleString()} đ</td>
+            <td class="px-5 py-3 text-center font-bold text-emerald-600">${p.stockQuantity ?? 0}</td>
+            <td class="px-5 py-3 text-center">
+              <div class="inline-flex items-center gap-1.5">
+                <button onclick="openModalEdit(${p.id})" class="px-2.5 py-1 rounded bg-amber-50 text-amber-600 hover:bg-amber-100 font-semibold text-xs transition">Sửa</button>
+                <button onclick="handleDeleteProduct(${p.id}, '${p.name}')" class="px-2.5 py-1 rounded bg-rose-50 text-rose-600 hover:bg-rose-100 font-semibold text-xs transition">Xóa</button>
+              </div>
+            </td>
+          `;
+                tbody.appendChild(tr);
+            });
+        } catch (e) { console.error(e); }
+    }
+
+    async function loadCategories() {
+        try {
+            const res = await fetch(`${API_BASE}/categories`, { headers: getAuthHeaders() });
+            const json = await res.json();
+            const select = document.getElementById('prodCategory');
+            select.innerHTML = '';
+            const list = Array.isArray(json) ? json : (json.data || []);
+            list.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.innerText = c.name;
+                select.appendChild(opt);
+            });
+        } catch (e) { console.error(e); }
+    }
+
+    // Mở modal để THÊM MỚI
+    async function openModalCreate() {
+        await loadCategories();
+        document.getElementById('editProductId').value = '';
+        document.getElementById('modalTitle').innerText = 'Thêm Sản Phẩm Mới';
+        document.getElementById('btnSubmit').innerText = 'Tạo Sản Phẩm';
+        document.getElementById('stockWrapper').style.display = 'block';
+
+        // Reset form
+        document.getElementById('prodSku').value = '';
+        document.getElementById('prodName').value = '';
+        document.getElementById('prodPrice').value = '';
+        document.getElementById('prodStock').value = '50';
+        document.getElementById('prodDesc').value = '';
+
+        document.getElementById('productModal').classList.remove('hidden');
+    }
+
+    // Mở modal để SỬA SẢN PHẨM
+    async function openModalEdit(id) {
+        await loadCategories();
+        const p = productsCache.find(item => item.id === id);
+        if (!p) return alert('Không tìm thấy dữ liệu sản phẩm!');
+
+        document.getElementById('editProductId').value = p.id;
+        document.getElementById('modalTitle').innerText = `Sửa Sản Phẩm #${p.id}`;
+        document.getElementById('btnSubmit').innerText = 'Cập Nhật Thay Đổi';
+
+        // Khi sửa thông tin sản phẩm thì không sửa tồn kho ở đây (tồn kho dùng trang Kho để nhập)
+        document.getElementById('stockWrapper').style.display = 'none';
+
+        document.getElementById('prodSku').value = p.sku || '';
+        document.getElementById('prodName').value = p.name || '';
+        document.getElementById('prodPrice').value = p.price || '';
+        document.getElementById('prodDesc').value = p.description || '';
+        if (p.categoryId) {
+            document.getElementById('prodCategory').value = p.categoryId;
+        }
+
+        document.getElementById('productModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+        document.getElementById('productModal').classList.add('hidden');
+    }
+
+    // Xử lý gửi request Thêm hoặc Sửa
+    async function handleSubmitProduct() {
+        const editId = document.getElementById('editProductId').value;
+        const sku = document.getElementById('prodSku').value.trim();
+        const name = document.getElementById('prodName').value.trim();
+        const price = Number(document.getElementById('prodPrice').value);
+        const categoryId = Number(document.getElementById('prodCategory').value);
+        const description = document.getElementById('prodDesc').value.trim();
+
+        if (!sku || !name || !price || !categoryId) {
+            return alert('Vui lòng điền đủ: Mã SKU, Tên sản phẩm, Giá bán và Danh mục!');
+        }
+
+        const isEdit = Boolean(editId);
+        const url = isEdit ? `${API_BASE}/products/${editId}` : `${API_BASE}/products`;
+        const method = isEdit ? 'PUT' : 'POST';
+
+        const payload = {
+            sku,
+            name,
+            price,
+            categoryId,
+            description
+        };
+
+        if (!isEdit) {
+            payload.stockQuantity = Number(document.getElementById('prodStock').value) || 0;
+        }
+
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: getAuthHeaders(),
+                body: JSON.stringify(payload)
+            });
+            const json = await res.json();
+            if (res.ok) {
+                alert(isEdit ? 'Cập nhật sản phẩm thành công!' : 'Tạo sản phẩm mới thành công!');
+                closeModal();
+                loadProducts();
+            } else {
+                alert('Thất bại: ' + (json.message || 'Lỗi xử lý dữ liệu'));
+            }
+        } catch (e) {
+            alert('Lỗi kết nối tới máy chủ!');
+        }
+    }
+
+    // Xử lý XÓA SẢN PHẨM
+    async function handleDeleteProduct(id, name) {
+        if (!confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${name}" (#${id}) không? Hành động này không thể hoàn tác.`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}/products/${id}`, {
+                method: 'DELETE',
+                headers: getAuthHeaders()
+            });
+            const json = await res.json().catch(() => ({}));
+            if (res.ok) {
+                alert('Xóa sản phẩm thành công!');
+                loadProducts();
+            } else {
+                alert('Xóa thất bại: ' + (json.message || 'Sản phẩm có thể đang ràng buộc đơn hàng hoặc dữ liệu kho'));
+            }
+        } catch (e) {
+            alert('Lỗi kết nối tới máy chủ!');
+        }
+    }
+
+    loadProducts();
+</script>
+</body>
+</html>

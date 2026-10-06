@@ -3,13 +3,18 @@ package com.orderhub.controller;
 import com.orderhub.dto.request.ImportStockRequest;
 import com.orderhub.dto.response.ApiResponse;
 import com.orderhub.dto.response.InventoryResponse;
+import com.orderhub.entity.InventoryLog;
+import com.orderhub.repository.InventoryLogRepository;
 import com.orderhub.service.InventoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/inventories")
@@ -18,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 public class InventoryController {
 
     private final InventoryService inventoryService;
+    private final InventoryLogRepository inventoryLogRepository; // Thêm repository này
 
     @PostMapping("/import")
     @Operation(
@@ -37,6 +43,16 @@ public class InventoryController {
         return ResponseEntity.ok(ApiResponse.<InventoryResponse>builder()
                 .message("Lấy thông tin tồn kho thành công")
                 .data(inventoryService.getInventoryByProductId(productId))
+                .build());
+    }
+
+    // THÊM ENDPOINT NÀY ĐỂ FRONTEND LẤY DANH SÁCH AUDIT LOG
+    @GetMapping("/logs")
+    @Operation(summary = "Lấy toàn bộ lịch sử biến động kho (Audit Logs)")
+    public ResponseEntity<ApiResponse<List<InventoryLog>>> getAllInventoryLogs() {
+        return ResponseEntity.ok(ApiResponse.<List<InventoryLog>>builder()
+                .message("Lấy lịch sử kho thành công")
+                .data(inventoryLogRepository.findAll(Sort.by(Sort.Direction.DESC, "id")))
                 .build());
     }
 }
