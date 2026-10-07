@@ -17,6 +17,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,12 +40,13 @@ public class OrderController {
     )
     public ResponseEntity<ApiResponse<OrderResponse>> createOrder(
             @RequestHeader(value = "X-Idempotency-Key", required = false) String idempotencyKey,
-            @Valid @RequestBody CreateOrderRequest request
+            @Valid @RequestBody CreateOrderRequest request,
+            Authentication authentication
     ) throws Exception {
 
         // 1. Nếu client không truyền header Idempotency Key -> Xử lý tạo đơn bình thường
         if (idempotencyKey == null || idempotencyKey.isBlank()) {
-            OrderResponse response = orderService.createOrder(request);
+            OrderResponse response = orderService.createOrder(request, authentication.getName());
             return ResponseEntity.status(HttpStatus.CREATED).body(
                     ApiResponse.<OrderResponse>builder()
                             .code(HttpStatus.CREATED.value())
@@ -86,7 +88,7 @@ public class OrderController {
 
         try {
             // Chạy luồng tạo đơn và giữ tồn kho
-            OrderResponse response = orderService.createOrder(request);
+            OrderResponse response = orderService.createOrder(request, authentication.getName());
 
             // Lưu kết quả JSON lại vào database để phục vụ các lần retry tiếp theo
             String jsonResult = objectMapper.writeValueAsString(response);
@@ -133,22 +135,24 @@ public class OrderController {
     )
     public ResponseEntity<ApiResponse<OrderResponse>> updateOrderStatus(
             @PathVariable String orderCode,
-            @Valid @RequestBody UpdateOrderStatusRequest request) {
+            @Valid @RequestBody UpdateOrderStatusRequest request,
+            Authentication authentication) {
         return ResponseEntity.ok(
                 ApiResponse.<OrderResponse>builder()
                         .message("Cập nhật trạng thái đơn hàng thành công")
-                        .data(orderService.updateOrderStatus(orderCode, request))
+                        .data(orderService.updateOrderStatus(orderCode, request, authentication.getName()))
                         .build()
         );
     }
 
     @PatchMapping("/{orderCode}/cancel")
     @Operation(summary = "Hủy đơn hàng (Tự động hoàn lại số lượng tồn kho)")
-    public ResponseEntity<ApiResponse<OrderResponse>> cancelOrder(@PathVariable String orderCode) {
+    public ResponseEntity<ApiResponse<OrderResponse>> cancelOrder(
+            @PathVariable String orderCode, Authentication authentication) {
         return ResponseEntity.ok(
                 ApiResponse.<OrderResponse>builder()
                         .message("Hủy đơn hàng thành công")
-                        .data(orderService.cancelOrder(orderCode))
+                        .data(orderService.cancelOrder(orderCode, authentication.getName()))
                         .build()
         );
     }

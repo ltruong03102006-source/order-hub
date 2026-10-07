@@ -21,4 +21,21 @@ public class CategoryRevenueResponse {
 
     @Schema(description = "Tổng doanh thu (VNĐ)", example = "45000000")
     BigDecimal totalRevenue;
+
+    BigDecimal totalCostOfGoodsSold;
+    BigDecimal grossProfit;
+    Boolean costTracked;
+
+    public CategoryRevenueResponse(String categoryName, Long totalSoldQuantity,
+                                   BigDecimal totalRevenue, BigDecimal totalCostOfGoodsSold,
+                                   Boolean costTracked) {
+        this.categoryName = categoryName;
+        this.totalSoldQuantity = totalSoldQuantity;
+        this.totalRevenue = totalRevenue;
+        this.totalCostOfGoodsSold = totalCostOfGoodsSold;
+        this.costTracked = costTracked;
+        this.grossProfit = Boolean.TRUE.equals(costTracked) && totalCostOfGoodsSold != null
+                ? totalRevenue.subtract(totalCostOfGoodsSold)
+                : null;
+    }
 }

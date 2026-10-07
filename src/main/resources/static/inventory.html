@@ -119,11 +119,12 @@
                         <th class="px-5 py-3">LOẠI GIAO DỊCH</th>
                         <th class="px-5 py-3 text-center">SỐ LƯỢNG THAY ĐỔI</th>
                         <th class="px-5 py-3">GHI CHÚ</th>
+                        <th class="px-5 py-3">NGƯỜI THỰC HIỆN</th>
                         <th class="px-5 py-3 text-right">THỜI GIAN</th>
                     </tr>
                     </thead>
                     <tbody id="logBody" class="divide-y divide-slate-100 font-mono text-xs">
-                    <tr><td colspan="6" class="text-center py-6 text-slate-400 font-sans">Đang tải nhật ký...</td></tr>
+                    <tr><td colspan="7" class="text-center py-6 text-slate-400 font-sans">Đang tải nhật ký...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -173,6 +174,14 @@
                 <input id="importQty" type="number" placeholder="50" class="w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-emerald-500">
             </div>
             <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Giá nhập mỗi sản phẩm (VND)</label>
+                <input id="importCostPrice" type="number" min="1" step="0.01" required placeholder="22000000" class="w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Mã lô / mã phiếu nhập</label>
+                <input id="importBatchCode" type="text" maxlength="50" required placeholder="PO-2026-001" class="w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+            <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Ghi chú đợt nhập</label>
                 <input id="importNote" type="text" placeholder="Nhập lô hàng chính hãng đợt 1" class="w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-emerald-500">
             </div>
@@ -180,6 +189,36 @@
         <div class="flex justify-end gap-2 pt-3 border-t">
             <button onclick="closeImportModal()" class="px-4 py-2 border rounded-lg text-xs font-semibold hover:bg-slate-100">Hủy</button>
             <button onclick="submitImport()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold">Cộng Tồn Kho</button>
+        </div>
+    </div>
+</div>
+
+<div id="modalBatches" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-4xl p-6 space-y-4">
+        <div class="flex justify-between items-center border-b pb-3">
+            <div>
+                <h3 class="font-bold text-slate-800">Chi tiết lô nhập và giá vốn</h3>
+                <p class="text-xs text-slate-500">Hàng xuất được tính theo FIFO: lô nhập trước được sử dụng trước.</p>
+            </div>
+            <button onclick="closeBatchesModal()" class="text-slate-400 hover:text-slate-700">✕</button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 text-slate-500 text-xs uppercase">
+                <tr>
+                    <th class="px-4 py-3">Mã lô</th>
+                    <th class="px-4 py-3 text-right">SL nhập</th>
+                    <th class="px-4 py-3 text-right">SL còn</th>
+                    <th class="px-4 py-3 text-right">Giá vốn/đv</th>
+                    <th class="px-4 py-3 text-right">Giá trị tồn lô</th>
+                    <th class="px-4 py-3">Ngày nhập</th>
+                    <th class="px-4 py-3 text-right">Thao tác</th>
+                </tr>
+                </thead>
+                <tbody id="batchBody" class="divide-y divide-slate-100">
+                <tr><td colspan="7" class="text-center py-6 text-slate-400">Đang tải...</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -221,7 +260,10 @@
                     <td class="px-5 py-3 text-center font-bold text-amber-500">${reserved}</td>
                     <td class="px-5 py-3 text-center font-bold ${available <= 5 ? 'text-rose-500' : 'text-emerald-600'}">${available}</td>
                     <td class="px-5 py-3 text-center">
-                        <button onclick="quickImport(${p.id})" class="text-xs bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-semibold px-2.5 py-1 rounded transition">Nhập thêm</button>
+                        <div class="inline-flex gap-1">
+                            <button onclick="quickImport(${p.id})" class="text-xs bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-semibold px-2.5 py-1 rounded transition">Nhập lô</button>
+                            <button onclick="viewBatches(${p.id})" class="text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-semibold px-2.5 py-1 rounded transition">Xem lô</button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -307,7 +349,7 @@
         tbody.innerHTML = '';
 
         if (!list || list.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-slate-400 font-sans">Không tìm thấy giao dịch nào</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-slate-400 font-sans">Không tìm thấy giao dịch nào</td></tr>';
             return;
         }
 
@@ -340,6 +382,12 @@
             } else if (action === 'OUTBOUND' || action === 'EXPORT' || action === 'SHIP_DEDUCT') {
                 badgeClass = 'bg-blue-50 text-blue-700 border border-blue-200';
                 actionLabel = 'XUẤT KHO';
+            } else if (action === 'RETURN_RESTOCK') {
+                badgeClass = 'bg-cyan-50 text-cyan-700 border border-cyan-200';
+                actionLabel = 'NHẬP HÀNG HOÀN';
+            } else if (action === 'ADMIN_ADJUST') {
+                badgeClass = 'bg-rose-50 text-rose-700 border border-rose-200';
+                actionLabel = 'ĐIỀU CHỈNH';
             }
 
             const time = log.createdAt ? new Date(log.createdAt).toLocaleString('vi-VN') : '-';
@@ -366,10 +414,12 @@
                     ${cleanNote}
                     ${log.referenceOrderCode ? `<span class="ml-1 text-xs text-indigo-600 font-mono">(${log.referenceOrderCode})</span>` : ''}
                 </td>
+                <td class="px-5 py-3 text-sm text-slate-600 font-sans"></td>
                 <td class="px-5 py-3 text-right text-xs font-mono text-slate-400">
                     ${time}
                 </td>
             `;
+            tr.children[5].textContent = log.performedBy || 'Không xác định (log cũ)';
             tbody.appendChild(tr);
         });
     }
@@ -442,28 +492,112 @@
 
     function openImportModal() { document.getElementById('modalImport').classList.remove('hidden'); }
     function closeImportModal() { document.getElementById('modalImport').classList.add('hidden'); }
+    function closeBatchesModal() { document.getElementById('modalBatches').classList.add('hidden'); }
     function quickImport(pid) {
         document.getElementById('importPid').value = pid;
         openImportModal();
     }
 
+    async function viewBatches(productId) {
+        const tbody = document.getElementById('batchBody');
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-slate-400">Đang tải...</td></tr>';
+        document.getElementById('modalBatches').classList.remove('hidden');
+        try {
+            const response = await fetch(`${API_BASE}/inventories/product/${productId}/batches`, {
+                headers: getAuthHeaders()
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || 'Không tải được thông tin lô hàng.');
+            const batches = result.data || [];
+            tbody.replaceChildren();
+            if (batches.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-slate-400">Sản phẩm chưa có lô nhập được ghi nhận.</td></tr>';
+                return;
+            }
+            batches.forEach(batch => {
+                const row = document.createElement('tr');
+                const values = [
+                    batch.batchCode,
+                    Number(batch.receivedQuantity).toLocaleString(),
+                    Number(batch.remainingQuantity).toLocaleString(),
+                    batch.costTracked ? `${Number(batch.unitCost).toLocaleString()} đ` : 'Chưa định giá',
+                    batch.remainingStockValue == null ? '—' : `${Number(batch.remainingStockValue).toLocaleString()} đ`,
+                    batch.receivedAt ? new Date(batch.receivedAt).toLocaleString('vi-VN') : '—'
+                ];
+                values.forEach((value, index) => {
+                    const cell = document.createElement('td');
+                    cell.className = `px-4 py-3 ${index > 0 && index < 5 ? 'text-right' : ''}`;
+                    cell.textContent = value;
+                    row.appendChild(cell);
+                });
+                const actionCell = document.createElement('td');
+                actionCell.className = 'px-4 py-3 text-right';
+                if (batch.batchCode.startsWith('OPENING-UNVALUED-') && !batch.costTracked && batch.remainingQuantity > 0) {
+                    const valueButton = document.createElement('button');
+                    valueButton.type = 'button';
+                    valueButton.className = 'text-xs text-indigo-600 hover:underline';
+                    valueButton.textContent = 'Ghi giá tồn đầu kỳ';
+                    valueButton.addEventListener('click', () => valueOpeningBatch(productId));
+                    actionCell.appendChild(valueButton);
+                } else {
+                    actionCell.textContent = '—';
+                }
+                row.appendChild(actionCell);
+                tbody.appendChild(row);
+            });
+        } catch (error) {
+            const row = document.createElement('tr');
+            const cell = document.createElement('td');
+            cell.colSpan = 7;
+            cell.className = 'text-center py-6 text-rose-600';
+            cell.textContent = error.message;
+            row.appendChild(cell);
+            tbody.replaceChildren(row);
+        }
+    }
+
+    async function valueOpeningBatch(productId) {
+        const unitCost = Number(prompt('Nhập giá vốn thực tế cho mỗi sản phẩm trong tồn đầu kỳ (VND):'));
+        if (!Number.isFinite(unitCost) || unitCost <= 0) return;
+        try {
+            const response = await fetch(`${API_BASE}/inventories/product/${productId}/opening-cost`, {
+                method: 'PATCH',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ unitCost })
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || 'Không cập nhật được giá vốn.');
+            await Promise.all([viewBatches(productId), loadInventory()]);
+        } catch (error) {
+            alert(error.message);
+        }
+    }
+
     async function submitImport() {
         const productId = Number(document.getElementById('importPid').value);
         const quantity = Number(document.getElementById('importQty').value);
+        const costPrice = Number(document.getElementById('importCostPrice').value);
+        const batchCode = document.getElementById('importBatchCode').value.trim();
         const note = document.getElementById('importNote').value;
 
-        if (!productId || !quantity) return alert('Vui lòng điền mã sản phẩm và số lượng');
+        if (!productId || !quantity || costPrice <= 0 || !batchCode) {
+            return alert('Vui lòng nhập mã sản phẩm, số lượng, giá nhập và mã lô hợp lệ.');
+        }
 
         try {
             const res = await fetch(`${API_BASE}/inventories/import`, {
                 method: 'POST',
                 headers: getAuthHeaders(),
-                body: JSON.stringify({ productId, quantity, note })
+                body: JSON.stringify({ productId, quantity, costPrice, batchCode, note })
             });
             const json = await res.json();
             if (res.ok) {
                 alert('Nhập kho thành công!');
                 closeImportModal();
+                document.getElementById('importQty').value = '';
+                document.getElementById('importCostPrice').value = '';
+                document.getElementById('importBatchCode').value = '';
+                document.getElementById('importNote').value = '';
                 loadInventory();
                 loadLogs();
             } else {

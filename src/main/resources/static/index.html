@@ -7,10 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/js/auth-guard.js"></script>
 </head>
-<body class="bg-slate-50 flex h-screen overflow-hidden text-slate-800">
+<body class="bg-slate-50 flex min-h-screen text-slate-800">
 
 <!-- SIDEBAR -->
-<aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0">
+<aside class="w-14 md:w-56 lg:w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 min-h-screen">
     <div>
         <div class="p-6 border-b border-slate-800">
             <h1 class="text-xl font-black text-indigo-400">OrderHub OMS</h1>
@@ -20,14 +20,13 @@
             <a href="/index.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
                 <span></span> Tổng quan (Dashboard)
             </a>
-            <!-- THÊM DÒNG NÀY: -->
             <a href="/categories.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
                 <span></span> Quản lý Danh mục
             </a>
             <a href="/products.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
-                <span></span> Quản lý Sản phẩm
+                <span>️</span> Quản lý Sản phẩm
             </a>
-            <a href="/inventory.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
+            <a href="/inventory.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-indigo-600 text-white font-medium text-sm">
                 <span></span> Quản lý Kho hàng
             </a>
             <a href="/orders.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
@@ -38,145 +37,245 @@
             </a>
         </nav>
     </div>
-    <div class="p-4 border-t border-slate-800">
-        <div class="text-xs text-slate-400 mb-2 font-mono" id="userDisplay">Admin</div>
-        <button onclick="logout()" class="w-full bg-slate-800 hover:bg-rose-600 hover:text-white py-2 rounded-lg text-xs font-semibold transition">Đăng xuất</button>
+    <div class="p-1 md:p-4 border-t border-slate-800">
+        <div class="hidden md:block text-xs text-slate-400 mb-2 font-mono truncate" id="userDisplay">Admin</div>
+        <button title="Đăng xuất" onclick="logout()" class="w-full bg-slate-800 hover:bg-rose-600 hover:text-white py-2 rounded-lg text-xs font-semibold transition"><span class="md:hidden">↪</span><span class="hidden md:inline">Đăng xuất</span></button>
     </div>
 </aside>
 
 <!-- MAIN AREA -->
-<div class="flex-1 flex flex-col overflow-y-auto">
-    <header class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center shadow-sm">
-        <h2 class="text-lg font-bold text-slate-800">Báo Cáo Tổng Quan Hệ Thống</h2>
-        <button onclick="loadDashboard()" class="text-xs bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg border font-medium">Làm mới ↻</button>
+<div class="flex-1 min-w-0">
+    <header class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-slate-200 px-5 lg:px-8 py-4 flex justify-between items-center">
+        <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-indigo-600">Control center</p>
+            <h2 class="text-lg font-bold text-slate-900">Tổng quan vận hành</h2>
+        </div>
+        <div class="flex items-center gap-3">
+            <span id="dashboardUpdatedAt" class="hidden sm:inline text-xs text-slate-500"></span>
+            <button id="refreshDashboardButton" onclick="loadDashboard()" class="text-sm bg-white hover:bg-slate-50 px-3.5 py-2 rounded-lg border border-slate-200 font-semibold shadow-sm">Làm mới</button>
+        </div>
     </header>
 
-    <main class="p-8 space-y-6">
-        <!-- 4 THẺ KPI -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                <p class="text-xs font-bold uppercase text-slate-400 tracking-wider">Doanh thu giao thành công</p>
-                <p id="kpiRevenue" class="text-2xl font-extrabold text-emerald-600 mt-2">0 đ</p>
+    <main class="max-w-[1600px] mx-auto p-5 lg:p-8 space-y-8">
+        <section class="flex flex-wrap items-end justify-between gap-3">
+            <div>
+                <h3 class="text-sm font-bold text-slate-800">Hiệu quả tài chính</h3>
+                <p class="text-xs text-slate-500 mt-1">Lũy kế trên các đơn đã xuất kho hoặc giao thành công</p>
             </div>
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                <p class="text-xs font-bold uppercase text-slate-400 tracking-wider">Tổng đơn hàng</p>
-                <p id="kpiOrders" class="text-2xl font-extrabold text-indigo-600 mt-2">0</p>
-            </div>
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                <p class="text-xs font-bold uppercase text-slate-400 tracking-wider">Mặt hàng kinh doanh</p>
-                <p id="kpiProducts" class="text-2xl font-extrabold text-slate-800 mt-2">0</p>
-            </div>
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                <p class="text-xs font-bold uppercase text-slate-400 tracking-wider">Cảnh báo kho thấp</p>
-                <p id="kpiLowStock" class="text-2xl font-extrabold text-rose-500 mt-2">0</p>
-            </div>
-        </div>
+            <span class="text-xs font-medium text-slate-500 bg-white border border-slate-200 px-3 py-1.5 rounded-full">Tất cả thời gian</span>
+        </section>
+        <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            <article class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                <div class="flex justify-between items-start"><p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Doanh thu ghi nhận</p><span class="text-emerald-600">↗</span></div>
+                <p id="kpiRevenue" class="text-2xl font-bold text-slate-900 mt-3">—</p>
+                <p class="text-xs text-slate-500 mt-1">Đơn đã xuất kho / giao thành công</p>
+            </article>
+            <article class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                <div class="flex justify-between items-start"><p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Giá vốn đã xuất</p><span class="text-amber-600">▤</span></div>
+                <p id="kpiCost" class="text-2xl font-bold text-slate-900 mt-3">—</p>
+                <p class="text-xs text-slate-500 mt-1">Giá vốn được tính theo FIFO</p>
+            </article>
+            <article class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                <div class="flex justify-between items-start"><p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Lợi nhuận gộp</p><span class="text-indigo-600">◒</span></div>
+                <p id="kpiProfit" class="text-2xl font-bold text-slate-900 mt-3">—</p>
+                <p id="costTrackingNotice" class="text-xs text-slate-500 mt-1">Doanh thu trừ giá vốn</p>
+            </article>
+        </section>
 
-        <!-- 2 BẢNG THỐNG KÊ CHI TIẾT THEO DANH MỤC -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Doanh thu theo danh mục -->
-            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <span>📈</span> Doanh thu theo Danh mục
-                </h3>
+        <section>
+            <div class="mb-4">
+                <h3 class="text-sm font-bold text-slate-800">Tình hình vận hành</h3>
+                <p class="text-xs text-slate-500 mt-1">Đơn hàng, danh mục sản phẩm và mức tồn sẵn sàng xử lý</p>
+            </div>
+            <div class="grid grid-cols-2 xl:grid-cols-5 gap-4">
+                <a href="/orders.html" class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-indigo-300 transition">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Tổng đơn hàng</p><p id="kpiOrders" class="text-2xl font-bold text-slate-900 mt-3">—</p>
+                </a>
+                <a href="/orders.html" class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-amber-300 transition">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Chờ xác nhận</p><p id="kpiPendingOrders" class="text-2xl font-bold text-amber-600 mt-3">—</p>
+                </a>
+                <a href="/orders.html" class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-blue-300 transition">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Đang xử lý / xuất</p><p id="kpiActiveOrders" class="text-2xl font-bold text-blue-600 mt-3">—</p>
+                </a>
+                <a href="/products.html" class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-slate-400 transition">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Mặt hàng</p><p id="kpiProducts" class="text-2xl font-bold text-slate-900 mt-3">—</p>
+                </a>
+                <a href="/inventory.html" class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-rose-300 transition">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Cảnh báo tồn thấp</p><p id="kpiLowStock" class="text-2xl font-bold text-rose-600 mt-3">—</p><p id="lowStockThresholdLabel" class="text-xs text-slate-500 mt-1"></p>
+                </a>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 2xl:grid-cols-2 gap-5">
+            <article class="bg-white p-5 lg:p-6 rounded-xl border border-slate-200 shadow-sm">
+                <div class="mb-4">
+                    <h3 class="font-bold text-slate-900">Doanh thu theo danh mục</h3>
+                    <p class="text-xs text-slate-500 mt-1">Doanh thu, giá vốn FIFO và lợi nhuận gộp</p>
+                </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
+                    <table class="w-full min-w-[600px] text-left text-sm">
                         <thead class="bg-slate-50 text-slate-400 text-xs uppercase border-b border-slate-100">
                         <tr>
                             <th class="py-2.5 px-3">Danh mục</th>
                             <th class="py-2.5 px-3 text-right">Doanh thu</th>
+                            <th class="py-2.5 px-3 text-right">Giá vốn</th>
+                            <th class="py-2.5 px-3 text-right">Lợi nhuận gộp</th>
                         </tr>
                         </thead>
                         <tbody id="categoryRevenueBody" class="divide-y divide-slate-100">
-                        <tr><td colspan="2" class="text-center py-4 text-slate-400">Đang tải...</td></tr>
+                        <tr><td colspan="4" class="text-center py-4 text-slate-400">Đang tải...</td></tr>
                         </tbody>
                     </table>
                 </div>
-            </div>
+                </article>
 
-            <!-- Tồn kho theo danh mục -->
-            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <span>⚖️</span> Cân đối Kho theo Danh mục
-                </h3>
+            <article class="bg-white p-5 lg:p-6 rounded-xl border border-slate-200 shadow-sm">
+                <div class="mb-4">
+                    <h3 class="font-bold text-slate-900">Tồn kho theo danh mục</h3>
+                    <p class="text-xs text-slate-500 mt-1">Phân biệt tồn thực tế, hàng giữ chỗ và tồn khả dụng</p>
+                </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
+                    <table class="w-full min-w-[520px] text-left text-sm">
                         <thead class="bg-slate-50 text-slate-400 text-xs uppercase border-b border-slate-100">
                         <tr>
                             <th class="py-2.5 px-3">Danh mục</th>
-                            <th class="py-2.5 px-3 text-center">Tổng tồn</th>
-                            <th class="py-2.5 px-3 text-center">Đang giữ chỗ</th>
+                            <th class="py-2.5 px-3 text-right">Tồn thực tế</th>
+                            <th class="py-2.5 px-3 text-right">Giữ chỗ</th>
+                            <th class="py-2.5 px-3 text-right">Khả dụng</th>
                         </tr>
                         </thead>
                         <tbody id="categoryStockBody" class="divide-y divide-slate-100">
-                        <tr><td colspan="3" class="text-center py-4 text-slate-400">Đang tải...</td></tr>
+                        <tr><td colspan="4" class="text-center py-4 text-slate-400">Đang tải...</td></tr>
                         </tbody>
                     </table>
                 </div>
-            </div>
-        </div>
+            </article>
+            </section>
+            <p id="dashboardError" class="hidden text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg p-3" role="alert"></p>
     </main>
 </div>
 
 <script>
     renderCurrentUser();
 
+    const moneyFormatter = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 });
+    const numberFormatter = new Intl.NumberFormat('vi-VN');
+
+    async function fetchDashboardData(path) {
+        const response = await fetch(`${API_BASE}${path}`, { headers: getAuthHeaders() });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || `Không tải được ${path}`);
+        return result.data;
+    }
+
+    function setText(id, value) {
+        document.getElementById(id).textContent = value;
+    }
+
+    function renderRevenueRows(items) {
+        const tbody = document.getElementById('categoryRevenueBody');
+        tbody.replaceChildren();
+        if (!items.length) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-slate-400">Chưa phát sinh đơn đã xuất kho</td></tr>';
+            return;
+        }
+        items.forEach(item => {
+            const row = document.createElement('tr');
+            const category = document.createElement('td');
+            category.className = 'py-3 px-3 font-semibold text-slate-700';
+            category.textContent = item.categoryName || 'Chưa phân loại';
+            const revenue = document.createElement('td');
+            revenue.className = 'py-3 px-3 text-right font-semibold text-slate-800';
+            revenue.textContent = `${moneyFormatter.format(Number(item.totalRevenue || 0))} đ`;
+            const cost = document.createElement('td');
+            cost.className = 'py-3 px-3 text-right text-slate-600';
+            cost.textContent = item.costTracked
+                ? `${moneyFormatter.format(Number(item.totalCostOfGoodsSold || 0))} đ`
+                : 'Chưa đủ dữ liệu';
+            const profit = document.createElement('td');
+            profit.className = 'py-3 px-3 text-right font-semibold text-indigo-700';
+            profit.textContent = item.grossProfit == null
+                ? 'Chưa đủ dữ liệu'
+                : `${moneyFormatter.format(Number(item.grossProfit))} đ`;
+            row.append(category, revenue, cost, profit);
+            tbody.appendChild(row);
+        });
+    }
+
+    function renderStockRows(items) {
+        const tbody = document.getElementById('categoryStockBody');
+        tbody.replaceChildren();
+        if (!items.length) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-slate-400">Chưa có dữ liệu tồn kho</td></tr>';
+            return;
+        }
+        items.forEach(item => {
+            const total = Number(item.totalStock ?? item.totalQuantity ?? 0);
+            const reserved = Number(item.totalReserved ?? item.reservedStock ?? item.reservedQuantity ?? 0);
+            const row = document.createElement('tr');
+            const category = document.createElement('td');
+            category.className = 'py-3 px-3 font-semibold text-slate-700';
+            category.textContent = item.categoryName || 'Chưa phân loại';
+            const physical = document.createElement('td');
+            physical.className = 'py-3 px-3 text-right text-slate-700';
+            physical.textContent = numberFormatter.format(total);
+            const reservedCell = document.createElement('td');
+            reservedCell.className = 'py-3 px-3 text-right text-amber-600';
+            reservedCell.textContent = numberFormatter.format(reserved);
+            const available = document.createElement('td');
+            available.className = 'py-3 px-3 text-right font-bold text-indigo-700';
+            available.textContent = numberFormatter.format(total - reserved);
+            row.append(category, physical, reservedCell, available);
+            tbody.appendChild(row);
+        });
+    }
+
+    function renderStats(data) {
+        setText('kpiRevenue', `${moneyFormatter.format(Number(data.totalRevenue || 0))} đ`);
+        setText('kpiCost', `${moneyFormatter.format(Number(data.totalCostOfGoodsSold || 0))} đ`);
+        setText('kpiProfit', data.grossProfit == null
+            ? 'Chưa đủ dữ liệu'
+            : `${moneyFormatter.format(Number(data.grossProfit))} đ`);
+        setText('costTrackingNotice', data.costTrackingComplete
+            ? 'Doanh thu trừ giá vốn FIFO'
+            : 'Chưa thể tính chính xác: còn mặt hàng chưa đủ dữ liệu giá vốn');
+        setText('kpiOrders', numberFormatter.format(Number(data.totalOrders || 0)));
+        setText('kpiPendingOrders', numberFormatter.format(Number(data.pendingOrders || 0)));
+        setText('kpiActiveOrders', numberFormatter.format(
+            Number(data.confirmedOrders || 0) + Number(data.shippedOrders || 0)
+        ));
+        setText('kpiProducts', numberFormatter.format(Number(data.totalProducts || 0)));
+        setText('kpiLowStock', numberFormatter.format(Number(data.lowStockProductsCount || 0)));
+        setText('lowStockThresholdLabel', `Tồn khả dụng ≤ ${numberFormatter.format(data.lowStockThreshold)} đơn vị`);
+    }
+
     async function loadDashboard() {
-        // 1. Thống kê KPI
-        try {
-            const resStats = await fetch(`${API_BASE}/dashboard/stats`, { headers: getAuthHeaders() });
-            const jsonStats = await resStats.json();
-            if (resStats.ok && jsonStats.data) {
-                const d = jsonStats.data;
-                document.getElementById('kpiRevenue').innerText = Number(d.totalRevenue || 0).toLocaleString() + ' đ';
-                document.getElementById('kpiOrders').innerText = d.totalOrders ?? 0;
-                document.getElementById('kpiProducts').innerText = d.totalProducts ?? 0;
-                document.getElementById('kpiLowStock').innerText = d.lowStockProductsCount ?? 0;
-            }
-        } catch (e) { console.error(e); }
+        const button = document.getElementById('refreshDashboardButton');
+        const errorBox = document.getElementById('dashboardError');
+        button.disabled = true;
+        button.textContent = 'Đang tải...';
+        errorBox.classList.add('hidden');
 
-        // 2. Doanh thu theo Category
-        try {
-            const resRev = await fetch(`${API_BASE}/dashboard/revenue-by-category`, { headers: getAuthHeaders() });
-            const jsonRev = await resRev.json();
-            const tbodyRev = document.getElementById('categoryRevenueBody');
-            tbodyRev.innerHTML = '';
-            const listRev = jsonRev.data || [];
-            if (listRev.length === 0) {
-                tbodyRev.innerHTML = '<tr><td colspan="2" class="text-center py-4 text-slate-400">Chưa có số liệu phát sinh</td></tr>';
-            } else {
-                listRev.forEach(item => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-              <td class="py-2.5 px-3 font-semibold text-slate-700">${item.categoryName || 'Không xác định'}</td>
-              <td class="py-2.5 px-3 text-right font-bold text-emerald-600">${Number(item.revenue || item.totalRevenue || 0).toLocaleString()} đ</td>
-            `;
-                    tbodyRev.appendChild(tr);
-                });
-            }
-        } catch (e) { console.error(e); }
-
-        // 3. Tồn kho theo Category
-        try {
-            const resStock = await fetch(`${API_BASE}/dashboard/stock-by-category`, { headers: getAuthHeaders() });
-            const jsonStock = await resStock.json();
-            const tbodyStock = document.getElementById('categoryStockBody');
-            tbodyStock.innerHTML = '';
-            const listStock = jsonStock.data || [];
-            if (listStock.length === 0) {
-                tbodyStock.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-slate-400">Chưa có số liệu kho</td></tr>';
-            } else {
-                listStock.forEach(item => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-              <td class="py-2.5 px-3 font-semibold text-slate-700">${item.categoryName || 'Không xác định'}</td>
-              <td class="py-2.5 px-3 text-center font-bold text-indigo-600">${item.totalStock ?? item.totalQuantity ?? 0}</td>
-              <td class="py-2.5 px-3 text-center font-bold text-amber-500">${item.reservedStock ?? item.reservedQuantity ?? 0}</td>
-            `;
-                    tbodyStock.appendChild(tr);
-                });
-            }
-        } catch (e) { console.error(e); }
+        const results = await Promise.allSettled([
+            fetchDashboardData('/dashboard/stats'),
+            fetchDashboardData('/dashboard/revenue-by-category'),
+            fetchDashboardData('/dashboard/stock-by-category')
+        ]);
+        let failedPanels = 0;
+        if (results[0].status === 'fulfilled') renderStats(results[0].value);
+        else failedPanels++;
+        if (results[1].status === 'fulfilled') renderRevenueRows(results[1].value || []);
+        else failedPanels++;
+        if (results[2].status === 'fulfilled') renderStockRows(results[2].value || []);
+        else failedPanels++;
+        if (failedPanels) {
+            errorBox.textContent = `${failedPanels} phần dữ liệu chưa tải được. Hãy kiểm tra kết nối hoặc đăng nhập lại, sau đó làm mới trang.`;
+            errorBox.classList.remove('hidden');
+        } else {
+            setText('dashboardUpdatedAt', `Cập nhật lúc ${new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`);
+        }
+        button.disabled = false;
+        button.textContent = 'Làm mới';
     }
 
     loadDashboard();

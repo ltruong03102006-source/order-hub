@@ -18,6 +18,7 @@ public class OrderItemRequest {
     Long productId;
 
     @Schema(description = "Số lượng mua", example = "1")
+    @NotNull
     @Min(1)
     Integer quantity;
 }

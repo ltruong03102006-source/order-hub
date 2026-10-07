@@ -31,14 +31,14 @@ public class OrderServiceImpl implements OrderService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final InventoryRepository inventoryRepository;
+    private final InventoryBatchRepository inventoryBatchRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final InventoryLogRepository inventoryLogRepository;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public OrderResponse createOrder(CreateOrderRequest request) {
-        // 1. Kiểm tra User tồn tại
-        User user = userRepository.findById(request.getUserId())
+    public OrderResponse createOrder(CreateOrderRequest request, String createdByUsername) {
+        User user = userRepository.findByUsername(createdByUsername)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         // 2. Khởi tạo thực thể Order
@@ -48,6 +48,9 @@ public class OrderServiceImpl implements OrderService {
                 .user(user)
                 .status(OrderStatus.PENDING)
                 .totalAmount(BigDecimal.ZERO)
+                .receiverName(normalize(request.getReceiverName()))
+                .receiverPhone(normalize(request.getReceiverPhone()))
+                .shippingAddress(normalize(request.getShippingAddress()))
                 .items(new ArrayList<>())
                 .build();
 
@@ -69,6 +72,7 @@ public class OrderServiceImpl implements OrderService {
                     .actionType(InventoryActionType.RESERVE)
                     .referenceOrderCode(orderCode) // Biến orderCode bạn đã sinh trước đó
                     .note("Giữ chỗ tồn kho khi tạo đơn hàng mới")
+                    .performedBy(createdByUsername)
                     .build());
 
             BigDecimal itemPrice = product.getPrice();
@@ -123,7 +127,8 @@ public class OrderServiceImpl implements OrderService {
     }
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public OrderResponse updateOrderStatus(String orderCode, UpdateOrderStatusRequest request) {
+    public OrderResponse updateOrderStatus(
+            String orderCode, UpdateOrderStatusRequest request, String performedBy) {
         Order order = orderRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
@@ -147,12 +152,17 @@ public class OrderServiceImpl implements OrderService {
                         .actionType(InventoryActionType.RELEASE)
                         .referenceOrderCode(order.getOrderCode())
                         .note("Hoàn trả lượng giữ chỗ do đơn hàng bị hủy")
+                        .performedBy(performedBy)
                         .build());
             }
         } else if (targetStatus == OrderStatus.SHIPPED) {
-            // Hàng xuất đi: trừ cả totalQuantity lẫn reservedQuantity
             for (OrderItem item : order.getItems()) {
-                inventoryRepository.deductStockOnShipment(item.getProduct().getId(), item.getQuantity());
+                allocateFifoCost(item);
+                int updatedRows = inventoryRepository.deductStockOnShipment(
+                        item.getProduct().getId(), item.getQuantity());
+                if (updatedRows != 1) {
+                    throw new AppException(ErrorCode.INVENTORY_BATCH_MISMATCH);
+                }
 
                 inventoryLogRepository.save(InventoryLog.builder()
                         .productId(item.getProduct().getId())
@@ -160,12 +170,17 @@ public class OrderServiceImpl implements OrderService {
                         .actionType(InventoryActionType.SHIP_DEDUCT)
                         .referenceOrderCode(order.getOrderCode())
                         .note("Xuất kho bàn giao cho đơn vị vận chuyển")
+                        .performedBy(performedBy)
                         .build());
             }
         } else if (targetStatus == OrderStatus.RETURNED) {
-            // REVERSE LOGISTICS: Hàng giao thất bại quay về kho -> Nhập lại totalQuantity
             for (OrderItem item : order.getItems()) {
-                inventoryRepository.restockOnReturn(item.getProduct().getId(), item.getQuantity());
+                restoreFifoBatches(item);
+                int updatedRows = inventoryRepository.restockOnReturn(
+                        item.getProduct().getId(), item.getQuantity());
+                if (updatedRows != 1) {
+                    throw new AppException(ErrorCode.INVENTORY_BATCH_MISMATCH);
+                }
 
                 inventoryLogRepository.save(InventoryLog.builder()
                         .productId(item.getProduct().getId())
@@ -173,6 +188,7 @@ public class OrderServiceImpl implements OrderService {
                         .actionType(InventoryActionType.RETURN_RESTOCK)
                         .referenceOrderCode(order.getOrderCode())
                         .note("Nhập lại kho do giao hàng không thành công / khách hoàn đơn")
+                        .performedBy(performedBy)
                         .build());
             }
         } else if (targetStatus == OrderStatus.DELIVERED) {
@@ -189,11 +205,11 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public OrderResponse cancelOrder(String orderCode) {
+    public OrderResponse cancelOrder(String orderCode, String performedBy) {
         // Hủy đơn hàng là trường hợp đặc biệt chuyển sang CANCELLED
         return updateOrderStatus(orderCode, UpdateOrderStatusRequest.builder()
                 .status(OrderStatus.CANCELLED)
-                .build());
+                .build(), performedBy);
     }
 
     private OrderResponse mapToOrderResponse(Order order) {
@@ -205,6 +221,12 @@ public class OrderServiceImpl implements OrderService {
                         .quantity(item.getQuantity())
                         .priceAtPurchase(item.getPriceAtPurchase())
                         .subtotal(item.getPriceAtPurchase().multiply(BigDecimal.valueOf(item.getQuantity())))
+                        .costOfGoodsSold(item.getCostOfGoodsSold())
+                        .grossProfit(item.getCostOfGoodsSold() == null
+                                ? null
+                                : item.getPriceAtPurchase().multiply(BigDecimal.valueOf(item.getQuantity()))
+                                        .subtract(item.getCostOfGoodsSold()))
+                        .costTracked(item.getCostOfGoodsSold() != null)
                         .build())
                 .toList();
 
@@ -213,11 +235,70 @@ public class OrderServiceImpl implements OrderService {
                 .orderCode(order.getOrderCode())
                 .userId(order.getUser().getId())
                 .username(order.getUser().getUsername())
+                .receiverName(order.getReceiverName())
+                .receiverPhone(order.getReceiverPhone())
+                .shippingAddress(order.getShippingAddress())
                 .status(order.getStatus())
                 .totalAmount(order.getTotalAmount())
                 .items(itemResponses)
                 .createdAt(order.getCreatedAt())
                 .build();
+    }
+
+    private String normalize(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private void allocateFifoCost(OrderItem item) {
+        List<InventoryBatch> batches = inventoryBatchRepository.findAvailableForUpdate(item.getProduct().getId());
+        int remainingToShip = item.getQuantity();
+        BigDecimal totalCost = BigDecimal.ZERO;
+        boolean fullyCosted = true;
+
+        for (InventoryBatch batch : batches) {
+            if (remainingToShip == 0) break;
+            int allocatedQuantity = Math.min(batch.getRemainingQuantity(), remainingToShip);
+            batch.setRemainingQuantity(batch.getRemainingQuantity() - allocatedQuantity);
+            remainingToShip -= allocatedQuantity;
+
+            item.addBatchAllocation(OrderItemBatchAllocation.builder()
+                    .inventoryBatch(batch)
+                    .quantity(allocatedQuantity)
+                    .unitCostAtShipment(batch.getUnitCost())
+                    .build());
+
+            if (batch.getUnitCost() == null) {
+                fullyCosted = false;
+            } else {
+                totalCost = totalCost.add(batch.getUnitCost().multiply(BigDecimal.valueOf(allocatedQuantity)));
+            }
+        }
+
+        if (remainingToShip > 0) {
+            throw new AppException(ErrorCode.INVENTORY_BATCH_MISMATCH);
+        }
+        inventoryBatchRepository.saveAll(batches);
+        item.setCostOfGoodsSold(fullyCosted ? totalCost : null);
+    }
+
+    private void restoreFifoBatches(OrderItem item) {
+        if (item.getBatchAllocations().isEmpty()) {
+            inventoryBatchRepository.save(InventoryBatch.builder()
+                    .product(item.getProduct())
+                    .batchCode("RETURN-LEGACY-" + item.getOrder().getOrderCode())
+                    .receivedQuantity(item.getQuantity())
+                    .remainingQuantity(item.getQuantity())
+                    .unitCost(null)
+                    .receivedAt(java.time.LocalDateTime.now())
+                    .build());
+            return;
+        }
+
+        item.getBatchAllocations().forEach(allocation -> {
+            InventoryBatch batch = allocation.getInventoryBatch();
+            batch.setRemainingQuantity(batch.getRemainingQuantity() + allocation.getQuantity());
+            inventoryBatchRepository.save(batch);
+        });
     }
     @Override
     @Transactional(readOnly = true)

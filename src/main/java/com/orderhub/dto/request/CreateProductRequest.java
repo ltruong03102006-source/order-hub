@@ -2,6 +2,7 @@ package com.orderhub.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -30,6 +31,10 @@ public class CreateProductRequest {
     @NotNull(message = "Số lượng tồn kho không được để trống")
     @Min(value = 0, message = "Số lượng tồn kho không được âm")
     Integer stockQuantity;
+
+    @DecimalMin(value = "0.0", inclusive = false, message = "Giá nhập ban đầu phải lớn hơn 0")
+    @Digits(integer = 10, fraction = 2, message = "Giá nhập tối đa 10 chữ số nguyên và 2 chữ số thập phân")
+    BigDecimal initialCostPrice;
 
     @Schema(description = "ID của danh mục sản phẩm", example = "1")
     @NotNull(message = "Danh mục không được để trống")

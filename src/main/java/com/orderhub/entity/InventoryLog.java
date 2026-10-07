@@ -44,6 +44,9 @@ public class InventoryLog {
     @Column(name = "note", columnDefinition = "TEXT")
     String note;
 
+    @Column(name = "performed_by", length = 100)
+    String performedBy;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     LocalDateTime createdAt;

@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 
@@ -18,6 +19,15 @@ import java.util.List;
 public class InventoryLogServiceImpl implements InventoryLogService {
 
     InventoryLogRepository inventoryLogRepository;
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<InventoryLogResponse> getAllLogs() {
+        return inventoryLogRepository.findAll(Sort.by(Sort.Direction.DESC, "id"))
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -45,6 +55,7 @@ public class InventoryLogServiceImpl implements InventoryLogService {
                 .actionType(log.getActionType())
                 .referenceOrderCode(log.getReferenceOrderCode())
                 .note(log.getNote())
+                .performedBy(log.getPerformedBy())
                 .createdAt(log.getCreatedAt())
                 .build();
     }

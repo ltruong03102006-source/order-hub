@@ -37,6 +37,15 @@ public class Order extends BaseEntity {
     @Column(name = "total_amount", nullable = false, precision = 12, scale = 2)
     private BigDecimal totalAmount;
 
+    @Column(name = "receiver_name", length = 100)
+    private String receiverName;
+
+    @Column(name = "receiver_phone", length = 30)
+    private String receiverPhone;
+
+    @Column(name = "shipping_address", length = 500)
+    private String shippingAddress;
+
     @Builder.Default
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();

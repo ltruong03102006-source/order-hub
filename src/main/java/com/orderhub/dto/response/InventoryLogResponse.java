@@ -18,5 +18,6 @@ public class InventoryLogResponse {
     InventoryActionType actionType;
     String referenceOrderCode;
     String note;
+    String performedBy;
     LocalDateTime createdAt;
 }

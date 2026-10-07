@@ -13,6 +13,7 @@ public enum ErrorCode {
     UNAUTHORIZED(1006, "Yêu cầu đăng nhập hoặc token không hợp lệ", HttpStatus.UNAUTHORIZED),
     USER_EXISTED(1007, "Tên đăng nhập đã tồn tại", HttpStatus.CONFLICT),
     EMAIL_EXISTED(1008, "Email đã được sử dụng", HttpStatus.CONFLICT),
+    INVENTORY_BATCH_MISMATCH(1009, "Số lượng tồn kho không khớp với số lượng các lô FIFO", HttpStatus.CONFLICT),
     INVALID_INPUT(9998, "Dữ liệu đầu vào không hợp lệ", HttpStatus.BAD_REQUEST),
     INVALID_STATE_TRANSITION(1004, "Chuyển đổi trạng thái đơn hàng không hợp lệ", org.springframework.http.HttpStatus.BAD_REQUEST),
     IDEMPOTENCY_KEY_CONFLICT(409, "Yêu cầu tạo đơn đang được xử lý, vui lòng không gửi lại", HttpStatus.CONFLICT),

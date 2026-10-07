@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -86,11 +87,12 @@ public class ProductController {
     @Operation(summary = "Cập nhật số lượng tồn kho")
     public ResponseEntity<ApiResponse<ProductResponse>> updateStock(
             @PathVariable Long id,
-            @Valid @RequestBody UpdateStockRequest request) {
+            @Valid @RequestBody UpdateStockRequest request,
+            Authentication authentication) {
         return ResponseEntity.ok(
                 ApiResponse.<ProductResponse>builder()
                         .message("Cập nhật kho thành công")
-                        .data(productService.updateStock(id, request))
+                        .data(productService.updateStock(id, request, authentication.getName()))
                         .build()
         );
     }

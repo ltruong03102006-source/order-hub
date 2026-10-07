@@ -2,11 +2,13 @@ package com.orderhub.config;
 
 import com.orderhub.entity.Category;
 import com.orderhub.entity.Inventory;
+import com.orderhub.entity.InventoryBatch;
 import com.orderhub.entity.Product;
 import com.orderhub.entity.User;
 import com.orderhub.entity.enums.Role;
 import com.orderhub.repository.CategoryRepository;
 import com.orderhub.repository.InventoryRepository;
+import com.orderhub.repository.InventoryBatchRepository;
 import com.orderhub.repository.ProductRepository;
 import com.orderhub.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
@@ -20,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
+import java.time.LocalDateTime;
 
 @Component
 @RequiredArgsConstructor
@@ -30,6 +33,7 @@ public class DataSeeder implements CommandLineRunner {
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
     private final InventoryRepository inventoryRepository;
+    private final InventoryBatchRepository inventoryBatchRepository;
     private final PasswordEncoder passwordEncoder;
     private final JdbcTemplate jdbcTemplate;
 
@@ -39,6 +43,21 @@ public class DataSeeder implements CommandLineRunner {
         migrateCustomerRole();
         seedUsers();
         seedCatalogAndInventory();
+        seedUncostedOpeningBatches();
+    }
+
+    private void seedUncostedOpeningBatches() {
+        inventoryRepository.findAll().stream()
+                .filter(inventory -> inventory.getTotalQuantity() > 0)
+                .filter(inventory -> !inventoryBatchRepository.existsByProductId(inventory.getProduct().getId()))
+                .forEach(inventory -> inventoryBatchRepository.save(InventoryBatch.builder()
+                        .product(inventory.getProduct())
+                        .batchCode("OPENING-UNVALUED-" + inventory.getProduct().getSku())
+                        .receivedQuantity(inventory.getTotalQuantity())
+                        .remainingQuantity(inventory.getTotalQuantity())
+                        .unitCost(null)
+                        .receivedAt(LocalDateTime.now())
+                        .build()));
     }
 
     private void migrateCustomerRole() {

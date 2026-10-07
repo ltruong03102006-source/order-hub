@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "order_items")
@@ -31,4 +33,16 @@ public class OrderItem {
 
     @Column(name = "price_at_purchase", nullable = false, precision = 12, scale = 2)
     private BigDecimal priceAtPurchase;
+
+    @Column(name = "cost_of_goods_sold", precision = 14, scale = 2)
+    private BigDecimal costOfGoodsSold;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "orderItem", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderItemBatchAllocation> batchAllocations = new ArrayList<>();
+
+    public void addBatchAllocation(OrderItemBatchAllocation allocation) {
+        batchAllocations.add(allocation);
+        allocation.setOrderItem(this);
+    }
 }

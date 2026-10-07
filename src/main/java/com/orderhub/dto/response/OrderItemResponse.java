@@ -17,4 +17,7 @@ public class OrderItemResponse {
     Integer quantity;
     BigDecimal priceAtPurchase;
     BigDecimal subtotal;
+    BigDecimal costOfGoodsSold;
+    BigDecimal grossProfit;
+    Boolean costTracked;
 }

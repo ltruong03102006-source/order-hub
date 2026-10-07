@@ -16,6 +16,9 @@ public class ProductResponse {
     String sku;
     String name;
     BigDecimal price;
+    BigDecimal costPrice;
+    BigDecimal grossMargin;
+    Boolean costTracked;
     Integer stockQuantity;
     Integer totalQuantity;
     Integer reservedQuantity;

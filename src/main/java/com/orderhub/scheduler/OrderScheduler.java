@@ -64,6 +64,7 @@ public class OrderScheduler {
                                 .referenceOrderCode(order.getOrderCode())
                                 .note("Tự động giải phóng tồn kho: Hết thời gian giữ chỗ đơn hàng ("
                                         + expirationMinutes + " phút)")
+                                .performedBy("SYSTEM")
                                 .build());
                         log.info("[Scheduler] Đã hoàn lại {} sản phẩm (ID: {}) từ đơn hàng {}",
                                 item.getQuantity(), item.getProduct().getId(), order.getOrderCode());

@@ -42,7 +42,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     int restockOnReturn(@Param("productId") Long productId, @Param("quantity") Integer quantity);
 
     // Cộng thêm total_quantity khi nhập hàng từ NCC
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE Inventory i SET i.totalQuantity = i.totalQuantity + :quantity " +
             "WHERE i.product.id = :productId")
     int importStock(@Param("productId") Long productId, @Param("quantity") Integer quantity);

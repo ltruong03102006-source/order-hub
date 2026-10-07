@@ -16,8 +16,9 @@ public enum OrderStatus {
         return switch (this) {
             case PENDING -> target == CONFIRMED || target == CANCELLED;
             case CONFIRMED -> target == SHIPPED || target == CANCELLED;
-            case SHIPPED -> target == DELIVERED || target == RETURNED; // Đích đến từ SHIPPED
-            case DELIVERED, RETURNED, CANCELLED -> false; // Các trạng thái cuối cùng, không thể đổi nữa
+            case SHIPPED -> target == DELIVERED || target == RETURNED;
+            case DELIVERED -> target == RETURNED;
+            case RETURNED, CANCELLED -> false;
         };
     }
 }
