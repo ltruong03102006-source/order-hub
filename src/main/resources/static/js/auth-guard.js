@@ -25,7 +25,11 @@ function logout() {
 
 function renderCurrentUser() {
     const username = localStorage.getItem('username') || 'Admin';
-    const role = localStorage.getItem('role') || 'ROLE_ADMIN';
+    const role = localStorage.getItem('role') || 'STAFF';
     const el = document.getElementById('userDisplay');
     if (el) el.innerText = `${username} (${role})`;
+
+    if (role === 'ADMIN') {
+        document.getElementById('staffManagementLink')?.classList.remove('hidden');
+    }
 }

@@ -37,7 +37,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 // Kiểm tra trực tiếp xem tài khoản còn tồn tại trong database không
                 Optional<User> userOpt = userRepository.findByUsername(username);
-                if (userOpt.isPresent()) {
+                if (userOpt.isPresent() && Boolean.TRUE.equals(userOpt.get().getActive())) {
                     User user = userOpt.get();
                     SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRole().name());
 

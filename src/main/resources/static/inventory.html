@@ -14,6 +14,7 @@
     <div>
         <div class="p-6 border-b border-slate-800">
             <h1 class="text-xl font-black text-indigo-400">OrderHub OMS</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Control Center</p>
         </div>
         <nav class="p-4 space-y-1">
             <a href="/index.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
@@ -23,13 +24,16 @@
                 <span></span> Quản lý Danh mục
             </a>
             <a href="/products.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
-                <span></span> Quản lý Sản phẩm
+                <span>️</span> Quản lý Sản phẩm
             </a>
             <a href="/inventory.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-indigo-600 text-white font-medium text-sm">
                 <span></span> Quản lý Kho hàng
             </a>
             <a href="/orders.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
                 <span></span> Quản lý Đơn hàng
+            </a>
+            <a id="staffManagementLink" href="/staffs.html" class="hidden flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
+                <span></span> Quản lý Nhân viên
             </a>
         </nav>
     </div>
@@ -105,7 +109,8 @@
                 </div>
             </div>
 
-            <div class="max-h-[480px] overflow-y-auto">
+            <!-- BẢNG HIỂN THỊ LOGS -->
+            <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
                     <thead class="bg-slate-50 text-slate-400 text-xs uppercase border-b border-slate-200 sticky top-0 z-10 shadow-sm">
                     <tr>
@@ -121,6 +126,31 @@
                     <tr><td colspan="6" class="text-center py-6 text-slate-400 font-sans">Đang tải nhật ký...</td></tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- KHU VỰC ĐIỀU HƯỚNG PHÂN TRANG -->
+            <div class="px-6 py-3 border-t border-slate-100 bg-slate-50/60 flex flex-wrap justify-between items-center text-xs text-slate-600 gap-3">
+                <div class="flex items-center gap-2">
+                    <span>Hiển thị</span>
+                    <select id="logPageSize" onchange="changeLogPageSize()" class="border border-slate-200 rounded-lg px-2 py-1 bg-white font-medium outline-none">
+                        <option value="5">5</option>
+                        <option value="10" selected>10</option>
+                        <option value="20">20</option>
+                    </select>
+                    <span>giao dịch / trang</span>
+                    <span class="text-slate-400 ml-2">|</span>
+                    <span id="logPageInfo" class="text-slate-500 font-medium ml-2">Đang tải...</span>
+                </div>
+
+                <div class="flex items-center gap-1.5" id="logPaginationBtns">
+                    <button id="btnPrevLog" onclick="changeLogPage(-1)" class="px-3 py-1.5 border border-slate-200 rounded-lg bg-white hover:bg-slate-100 font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition">
+                        &larr; Trước
+                    </button>
+                    <div id="logPageNumbers" class="flex items-center gap-1"></div>
+                    <button id="btnNextLog" onclick="changeLogPage(1)" class="px-3 py-1.5 border border-slate-200 rounded-lg bg-white hover:bg-slate-100 font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition">
+                        Sau &rarr;
+                    </button>
+                </div>
             </div>
         </div>
     </main>
@@ -159,6 +189,9 @@
 
     let productMap = {};
     let allLogsCache = [];
+    let filteredLogs = [];
+    let logCurrentPage = 1;
+    let logPageSize = 10;
 
     async function loadInventory() {
         try {
@@ -230,6 +263,45 @@
         }
     }
 
+    function applyDateFilter() {
+        const fromInput = document.getElementById('filterFromDate');
+        const toInput = document.getElementById('filterToDate');
+        const fromVal = fromInput ? fromInput.value : '';
+        const toVal = toInput ? toInput.value : '';
+
+        filteredLogs = [...allLogsCache];
+
+        if (fromVal) {
+            const fromDate = new Date(fromVal);
+            fromDate.setHours(0, 0, 0, 0);
+            filteredLogs = filteredLogs.filter(item => item.createdAt && new Date(item.createdAt) >= fromDate);
+        }
+
+        if (toVal) {
+            const toDate = new Date(toVal);
+            toDate.setHours(23, 59, 59, 999);
+            filteredLogs = filteredLogs.filter(item => item.createdAt && new Date(item.createdAt) <= toDate);
+        }
+
+        logCurrentPage = 1;
+        renderPaginatedLogs();
+    }
+
+    function renderPaginatedLogs() {
+        const totalItems = filteredLogs.length;
+        const totalPages = Math.ceil(totalItems / logPageSize) || 1;
+
+        if (logCurrentPage > totalPages) logCurrentPage = totalPages;
+        if (logCurrentPage < 1) logCurrentPage = 1;
+
+        const startIndex = (logCurrentPage - 1) * logPageSize;
+        const endIndex = startIndex + logPageSize;
+        const currentPageData = filteredLogs.slice(startIndex, endIndex);
+
+        renderLogsTable(currentPageData);
+        updatePaginationControls(totalItems, totalPages);
+    }
+
     function renderLogsTable(list) {
         const tbody = document.getElementById('logBody');
         tbody.innerHTML = '';
@@ -281,7 +353,7 @@
                     <div class="text-[11px] text-slate-400 font-mono">Mã SP: #${pid}</div>
                 </td>
                 <td class="px-5 py-3">
-                    <span class="px-2.5 py-1 rounded-md text-xs font-bold ${badgeClass}">
+                    <span class="whitespace-nowrap px-2 py-1 rounded-md text-[10px] font-bold ${badgeClass}">
                         ${actionLabel}
                     </span>
                 </td>
@@ -302,27 +374,52 @@
         });
     }
 
-    function applyDateFilter() {
-        const fromInput = document.getElementById('filterFromDate');
-        const toInput = document.getElementById('filterToDate');
-        const fromVal = fromInput ? fromInput.value : '';
-        const toVal = toInput ? toInput.value : '';
+    function updatePaginationControls(totalItems, totalPages) {
+        const start = totalItems === 0 ? 0 : (logCurrentPage - 1) * logPageSize + 1;
+        const end = Math.min(logCurrentPage * logPageSize, totalItems);
 
-        let filtered = [...allLogsCache];
+        document.getElementById('logPageInfo').innerText = `Hiển thị ${start} - ${end} / Tổng ${totalItems}`;
 
-        if (fromVal) {
-            const fromDate = new Date(fromVal);
-            fromDate.setHours(0, 0, 0, 0);
-            filtered = filtered.filter(item => item.createdAt && new Date(item.createdAt) >= fromDate);
+        document.getElementById('btnPrevLog').disabled = (logCurrentPage <= 1);
+        document.getElementById('btnNextLog').disabled = (logCurrentPage >= totalPages);
+
+        const pageNumbersContainer = document.getElementById('logPageNumbers');
+        pageNumbersContainer.innerHTML = '';
+
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= logCurrentPage - 1 && i <= logCurrentPage + 1)) {
+                const btn = document.createElement('button');
+                btn.innerText = i;
+                btn.className = `w-7 h-7 rounded-lg text-xs font-semibold transition ${
+                    i === logCurrentPage
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-100'
+                }`;
+                btn.onclick = () => goToLogPage(i);
+                pageNumbersContainer.appendChild(btn);
+            } else if (i === logCurrentPage - 2 || i === logCurrentPage + 2) {
+                const dots = document.createElement('span');
+                dots.innerText = '...';
+                dots.className = 'text-slate-400 px-1';
+                pageNumbersContainer.appendChild(dots);
+            }
         }
+    }
 
-        if (toVal) {
-            const toDate = new Date(toVal);
-            toDate.setHours(23, 59, 59, 999);
-            filtered = filtered.filter(item => item.createdAt && new Date(item.createdAt) <= toDate);
-        }
+    function changeLogPage(step) {
+        logCurrentPage += step;
+        renderPaginatedLogs();
+    }
 
-        renderLogsTable(filtered);
+    function goToLogPage(page) {
+        logCurrentPage = page;
+        renderPaginatedLogs();
+    }
+
+    function changeLogPageSize() {
+        logPageSize = Number(document.getElementById('logPageSize').value);
+        logCurrentPage = 1;
+        renderPaginatedLogs();
     }
 
     function filterToday() {
@@ -340,7 +437,7 @@
     function clearDateFilter() {
         document.getElementById('filterFromDate').value = '';
         document.getElementById('filterToDate').value = '';
-        renderLogsTable(allLogsCache);
+        applyDateFilter();
     }
 
     function openImportModal() { document.getElementById('modalImport').classList.remove('hidden'); }

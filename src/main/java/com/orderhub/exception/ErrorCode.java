@@ -11,6 +11,8 @@ public enum ErrorCode {
     ORDER_NOT_FOUND(1004, "Đơn hàng không tồn tại", HttpStatus.NOT_FOUND),
     INVALID_STATUS_TRANSITION(1005, "Không thể chuyển sang trạng thái đơn hàng này", HttpStatus.BAD_REQUEST),
     UNAUTHORIZED(1006, "Yêu cầu đăng nhập hoặc token không hợp lệ", HttpStatus.UNAUTHORIZED),
+    USER_EXISTED(1007, "Tên đăng nhập đã tồn tại", HttpStatus.CONFLICT),
+    EMAIL_EXISTED(1008, "Email đã được sử dụng", HttpStatus.CONFLICT),
     INVALID_INPUT(9998, "Dữ liệu đầu vào không hợp lệ", HttpStatus.BAD_REQUEST),
     INVALID_STATE_TRANSITION(1004, "Chuyển đổi trạng thái đơn hàng không hợp lệ", org.springframework.http.HttpStatus.BAD_REQUEST),
     IDEMPOTENCY_KEY_CONFLICT(409, "Yêu cầu tạo đơn đang được xử lý, vui lòng không gửi lại", HttpStatus.CONFLICT),

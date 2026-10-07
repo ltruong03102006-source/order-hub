@@ -3,9 +3,6 @@ package com.orderhub.entity;
 import com.orderhub.entity.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -14,7 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class User extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,17 +23,17 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false, length = 100)
-    private String fullName;
-
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 100)
     private String email;
+
+    @Column(name = "full_name", length = 100)
+    private String fullName;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private Role role;
+    private Role role; // ADMIN hoặc STAFF
 
-    @CreationTimestamp
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean active = true;
 }

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OrderHub - Quản lý Nhân viên</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/auth-guard.js"></script>
+</head>
+<body class="bg-slate-50 flex h-screen overflow-hidden text-slate-800">
+
+<!-- SIDEBAR -->
+<aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0">
+    <div>
+        <div class="p-6 border-b border-slate-800">
+            <h1 class="text-xl font-black text-indigo-400">OrderHub OMS</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Control Center</p>
+        </div>
+        <nav class="p-4 space-y-1">
+            <a href="/index.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
+                <span></span> Tổng quan
+            </a>
+            <a href="/categories.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
+                <span></span> Quản lý Danh mục
+            </a>
+            <a href="/products.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
+                <span></span> Quản lý Sản phẩm
+            </a>
+            <a href="/inventory.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
+                <span></span> Quản lý Kho hàng
+            </a>
+            <a href="/orders.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition text-sm">
+                <span></span> Quản lý Đơn hàng
+            </a>
+            <a href="/staffs.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-indigo-600 text-white font-medium text-sm">
+                <span></span> Quản lý Nhân viên
+            </a>
+        </nav>
+    </div>
+    <div class="p-4 border-t border-slate-800">
+        <div class="text-xs text-slate-400 mb-2 font-mono" id="userDisplay">Admin</div>
+        <button onclick="logout()" class="w-full bg-slate-800 hover:bg-rose-600 hover:text-white py-2 rounded-lg text-xs font-semibold transition">Đăng xuất</button>
+    </div>
+</aside>
+
+<!-- MAIN -->
+<div class="flex-1 flex flex-col overflow-y-auto">
+    <header class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center shadow-sm">
+        <h2 class="text-lg font-bold text-slate-800">Quản Lý Nhân Viên Vận Hành (Staffs)</h2>
+        <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
+            + Thêm Nhân Viên Mới
+        </button>
+    </header>
+
+    <main class="p-8">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-slate-100 font-bold text-sm text-slate-700">Danh Sách Nhân Viên Nội Bộ</div>
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 text-slate-400 text-xs uppercase border-b border-slate-200">
+                <tr>
+                    <th class="px-5 py-3">ID</th>
+                    <th class="px-5 py-3">Họ và Tên</th>
+                    <th class="px-5 py-3">Tài khoản (Username)</th>
+                    <th class="px-5 py-3">Email</th>
+                    <th class="px-5 py-3 text-center">Vai trò</th>
+                    <th class="px-5 py-3 text-center">Trạng thái</th>
+                    <th class="px-5 py-3 text-center">Thao tác</th>
+                </tr>
+                </thead>
+                <tbody id="staffBody" class="divide-y divide-slate-100">
+                <tr><td colspan="7" class="text-center py-6 text-slate-400">Đang tải danh sách...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<!-- MODAL TẠO NHÂN VIÊN -->
+<div id="modalStaff" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md p-6 space-y-4">
+        <div class="flex justify-between items-center border-b pb-3">
+            <h3 class="font-bold text-slate-800">Tạo Tài Khoản Nhân Viên</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700">✕</button>
+        </div>
+        <div class="space-y-3 text-xs">
+            <div>
+                <label class="block font-semibold text-slate-600 mb-1">Họ tên nhân viên *</label>
+                <input id="staffFullName" type="text" required maxlength="100" placeholder="Trần Văn Kho" class="w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+                <label class="block font-semibold text-slate-600 mb-1">Username đăng nhập *</label>
+                <input id="staffUsername" type="text" required minlength="3" maxlength="50" placeholder="kho_tran" class="w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+                <label class="block font-semibold text-slate-600 mb-1">Email nhân viên *</label>
+                <input id="staffEmail" type="email" required maxlength="100" placeholder="tran@orderhub.vn" class="w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+                <label class="block font-semibold text-slate-600 mb-1">Mật khẩu khởi tạo *</label>
+                <input id="staffPassword" type="password" required minlength="6" placeholder="Tối thiểu 6 ký tự" class="w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t">
+            <button onclick="closeModal()" class="px-4 py-2 border rounded-lg text-xs font-semibold hover:bg-slate-100">Hủy</button>
+            <button onclick="submitStaff()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold">Tạo Tài Khoản</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    renderCurrentUser();
+
+    const isAdmin = localStorage.getItem('role') === 'ADMIN';
+    if (!isAdmin) {
+        window.location.replace('/index.html');
+    }
+
+    function openModal() { document.getElementById('modalStaff').classList.remove('hidden'); }
+    function closeModal() { document.getElementById('modalStaff').classList.add('hidden'); }
+
+    async function loadStaffs() {
+        try {
+            const res = await fetch(`${API_BASE}/admin/staffs`, { headers: getAuthHeaders() });
+            const json = await res.json();
+            const list = Array.isArray(json) ? json : (json.data || []);
+            const tbody = document.getElementById('staffBody');
+            tbody.innerHTML = '';
+
+            if (list.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-slate-400">Chưa có nhân viên nào</td></tr>';
+                return;
+            }
+
+            list.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                const idCell = document.createElement('td');
+                idCell.className = 'px-5 py-3 font-mono text-slate-400';
+                idCell.textContent = `#${u.id}`;
+                const nameCell = document.createElement('td');
+                nameCell.className = 'px-5 py-3 font-semibold text-slate-800';
+                nameCell.textContent = u.fullName || '';
+                const usernameCell = document.createElement('td');
+                usernameCell.className = 'px-5 py-3 font-mono text-indigo-600';
+                usernameCell.textContent = u.username;
+                const emailCell = document.createElement('td');
+                emailCell.className = 'px-5 py-3 text-slate-600';
+                emailCell.textContent = u.email;
+                const roleCell = document.createElement('td');
+                roleCell.className = 'px-5 py-3 text-center';
+                roleCell.textContent = u.role;
+                const statusCell = document.createElement('td');
+                statusCell.className = `px-5 py-3 text-center ${u.active ? 'text-emerald-700' : 'text-slate-400'}`;
+                statusCell.textContent = u.active ? 'Hoạt động' : 'Tạm khóa';
+                const actionCell = document.createElement('td');
+                actionCell.className = 'px-5 py-3 text-center';
+                const actionButton = document.createElement('button');
+                actionButton.type = 'button';
+                actionButton.className = `text-xs ${u.active ? 'text-rose-600 hover:underline' : 'text-emerald-600 hover:underline'}`;
+                actionButton.textContent = u.active ? 'Khóa' : 'Mở khóa';
+                actionButton.addEventListener('click', () => toggleStatus(u.id));
+                actionCell.appendChild(actionButton);
+                tr.append(idCell, nameCell, usernameCell, emailCell, roleCell, statusCell, actionCell);
+                tbody.appendChild(tr);
+            });
+        } catch (e) {
+            console.error("Lỗi khi tải danh sách nhân viên:", e);
+            alert('Không thể tải danh sách nhân viên. Vui lòng kiểm tra quyền Admin và kết nối máy chủ.');
+        }
+    }
+
+    async function submitStaff() {
+        const fullName = document.getElementById('staffFullName').value.trim();
+        const username = document.getElementById('staffUsername').value.trim();
+        const email = document.getElementById('staffEmail').value.trim();
+        const password = document.getElementById('staffPassword').value;
+
+        if (!fullName || username.length < 3 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 6) {
+            return alert('Vui lòng điền đầy đủ tất cả các trường!');
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}/admin/staffs`, {
+                method: 'POST',
+                headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fullName, username, email, password })
+            });
+            const json = await res.json();
+            if (res.ok) {
+                alert('Tạo tài khoản nhân viên thành công!');
+                closeModal();
+                loadStaffs();
+            } else {
+                alert('Lỗi: ' + (json.message || 'Không thể tạo nhân viên'));
+            }
+        } catch (e) {
+            alert('Không thể kết nối tới máy chủ!');
+        }
+    }
+
+    async function toggleStatus(id) {
+        if (!confirm('Bạn có muốn đổi trạng thái tài khoản này không?')) return;
+        try {
+            const res = await fetch(`${API_BASE}/admin/staffs/${id}/toggle-status`, {
+                method: 'PATCH',
+                headers: getAuthHeaders()
+            });
+            const json = await res.json();
+            if (!res.ok) {
+                alert(json.message || 'Không thể cập nhật trạng thái nhân viên.');
+                return;
+            }
+            loadStaffs();
+        } catch (e) {
+            alert('Không thể cập nhật trạng thái nhân viên.');
+        }
+    }
+
+    if (isAdmin) loadStaffs();
+</script>
+</body>
+</html>
