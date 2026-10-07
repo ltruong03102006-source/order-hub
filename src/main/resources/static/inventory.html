@@ -223,6 +223,56 @@
     </div>
 </div>
 
+<div id="modalBatchDetail" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
+    <section class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl p-6 space-y-5" role="dialog" aria-modal="true" aria-labelledby="batchDetailTitle">
+        <header class="flex items-start justify-between border-b border-slate-200 pb-4">
+            <div>
+                <h3 id="batchDetailTitle" class="font-bold text-slate-900 text-lg">Chi tiết lô hàng</h3>
+                <p id="batchDetailSubtitle" class="text-sm text-slate-500 mt-1"></p>
+            </div>
+            <button type="button" onclick="closeBatchDetail()" aria-label="Đóng chi tiết lô" class="text-slate-400 hover:text-slate-700 text-xl">✕</button>
+        </header>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="rounded-xl border border-slate-200 p-4">
+                <p class="text-xs text-slate-500">Mã lô / phiếu nhập</p>
+                <p id="batchDetailCode" class="mt-1 font-semibold text-slate-900 break-all">—</p>
+            </div>
+            <div class="rounded-xl border border-slate-200 p-4">
+                <p class="text-xs text-slate-500">Trạng thái giá vốn</p>
+                <p id="batchDetailCostStatus" class="mt-1 font-semibold">—</p>
+            </div>
+            <div class="rounded-xl border border-slate-200 p-4">
+                <p class="text-xs text-slate-500">Số lượng nhập ban đầu</p>
+                <p id="batchDetailReceivedQty" class="mt-1 font-semibold text-slate-900">—</p>
+            </div>
+            <div class="rounded-xl border border-slate-200 p-4">
+                <p class="text-xs text-slate-500">Số lượng còn trong lô</p>
+                <p id="batchDetailRemainingQty" class="mt-1 font-semibold text-indigo-700">—</p>
+            </div>
+            <div class="rounded-xl border border-slate-200 p-4">
+                <p class="text-xs text-slate-500">Giá nhập / đơn vị</p>
+                <p id="batchDetailUnitCost" class="mt-1 font-semibold text-slate-900">—</p>
+            </div>
+            <div class="rounded-xl border border-slate-200 p-4">
+                <p class="text-xs text-slate-500">Giá trị lô lúc nhập</p>
+                <p id="batchDetailReceivedValue" class="mt-1 font-semibold text-slate-900">—</p>
+            </div>
+            <div class="rounded-xl border border-indigo-100 bg-indigo-50/60 p-4 sm:col-span-2">
+                <p class="text-xs text-indigo-700">Giá trị vốn của lượng còn trong lô</p>
+                <p id="batchDetailRemainingValue" class="mt-1 text-lg font-bold text-indigo-800">—</p>
+            </div>
+            <div class="rounded-xl border border-slate-200 p-4 sm:col-span-2">
+                <p class="text-xs text-slate-500">Thời điểm nhập lô</p>
+                <p id="batchDetailReceivedAt" class="mt-1 font-medium text-slate-800">—</p>
+            </div>
+        </div>
+        <p class="text-xs text-slate-500">Giá trị lô lúc nhập = số lượng nhập ban đầu × giá nhập/đơn vị. Giá trị tồn hiện tại được tính trên số lượng còn lại.</p>
+        <footer class="flex justify-end border-t border-slate-200 pt-4">
+            <button type="button" onclick="closeBatchDetail()" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm font-semibold text-slate-700">Đóng</button>
+        </footer>
+    </section>
+</div>
+
 <script>
     renderCurrentUser();
 
@@ -493,6 +543,31 @@
     function openImportModal() { document.getElementById('modalImport').classList.remove('hidden'); }
     function closeImportModal() { document.getElementById('modalImport').classList.add('hidden'); }
     function closeBatchesModal() { document.getElementById('modalBatches').classList.add('hidden'); }
+    function closeBatchDetail() { document.getElementById('modalBatchDetail').classList.add('hidden'); }
+
+    function viewBatchDetail(batch, productId) {
+        const money = value => value == null ? 'Chưa có dữ liệu' : `${Number(value).toLocaleString('vi-VN')} đ`;
+        const quantity = value => Number(value || 0).toLocaleString('vi-VN');
+        const receivedValue = batch.unitCost == null
+            ? null
+            : Number(batch.unitCost) * Number(batch.receivedQuantity);
+        const productName = productMap[productId] || `Sản phẩm #${productId}`;
+
+        document.getElementById('batchDetailSubtitle').textContent = `${productName} · ID sản phẩm #${productId} · ID lô #${batch.id}`;
+        document.getElementById('batchDetailCode').textContent = batch.batchCode || '—';
+        const costStatus = document.getElementById('batchDetailCostStatus');
+        costStatus.textContent = batch.costTracked ? 'Đã ghi nhận giá vốn' : 'Chưa được định giá';
+        costStatus.className = `mt-1 font-semibold ${batch.costTracked ? 'text-emerald-700' : 'text-amber-700'}`;
+        document.getElementById('batchDetailReceivedQty').textContent = quantity(batch.receivedQuantity);
+        document.getElementById('batchDetailRemainingQty').textContent = quantity(batch.remainingQuantity);
+        document.getElementById('batchDetailUnitCost').textContent = money(batch.unitCost);
+        document.getElementById('batchDetailReceivedValue').textContent = money(receivedValue);
+        document.getElementById('batchDetailRemainingValue').textContent = money(batch.remainingStockValue);
+        document.getElementById('batchDetailReceivedAt').textContent = batch.receivedAt
+            ? new Date(batch.receivedAt).toLocaleString('vi-VN')
+            : '—';
+        document.getElementById('modalBatchDetail').classList.remove('hidden');
+    }
     function quickImport(pid) {
         document.getElementById('importPid').value = pid;
         openImportModal();
@@ -532,15 +607,19 @@
                 });
                 const actionCell = document.createElement('td');
                 actionCell.className = 'px-4 py-3 text-right';
+                const detailButton = document.createElement('button');
+                detailButton.type = 'button';
+                detailButton.className = 'text-xs text-indigo-600 hover:text-indigo-800 hover:underline whitespace-nowrap';
+                detailButton.textContent = 'Xem chi tiết';
+                detailButton.addEventListener('click', () => viewBatchDetail(batch, productId));
+                actionCell.appendChild(detailButton);
                 if (batch.batchCode.startsWith('OPENING-UNVALUED-') && !batch.costTracked && batch.remainingQuantity > 0) {
                     const valueButton = document.createElement('button');
                     valueButton.type = 'button';
-                    valueButton.className = 'text-xs text-indigo-600 hover:underline';
+                    valueButton.className = 'ml-3 text-xs text-amber-700 hover:underline whitespace-nowrap';
                     valueButton.textContent = 'Ghi giá tồn đầu kỳ';
                     valueButton.addEventListener('click', () => valueOpeningBatch(productId));
                     actionCell.appendChild(valueButton);
-                } else {
-                    actionCell.textContent = '—';
                 }
                 row.appendChild(actionCell);
                 tbody.appendChild(row);
